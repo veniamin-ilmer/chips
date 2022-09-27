@@ -8,39 +8,56 @@ use arbitrary_int::{u2,u4};
 
 use log::{trace,debug};
 
+/// The 4004 requests data from RAM and ROM chips with methods in this trait
 pub trait IO {
+  /// Read byte from ROM chip
   fn read_rom_byte(&self, address: ROMAddress) -> u8;
-  fn read_rom_ports(&self, designated_index: DesignatedIndex) -> u4;
+  /// Read character from RAM chip
   fn read_ram_character(&self, command_control: u4, designated_index: DesignatedIndex) -> u4;
+  /// Write character to RAM chip
   fn write_ram_character(&mut self, command_control: u4, designated_index: DesignatedIndex, value: u4);
+  /// Read status from RAM chip
   fn read_ram_status(&self, command_control: u4, designated_index: DesignatedIndex, status_index: u2) -> u4;
+  /// Write status to RAM chip
   fn write_ram_status(&mut self, command_control: u4, designated_index: DesignatedIndex, status_index: u2, value: u4);
+
+  /// Write 4 bits to RAM chip
   fn write_ram_ports(&mut self, command_control: u4, designated_index: DesignatedIndex, value: u4);
+  /// Read 4 bits from ROM chip
+  fn read_rom_ports(&self, designated_index: DesignatedIndex) -> u4;
+  /// Write 4 bits to ROM chip
   fn write_rom_ports(&mut self, designated_index: DesignatedIndex, value: u4);
 }
 
+/// The 4004 sets the designated address using the Send Register Control (SRC) instruction. It is used to designate the RAM address.
 #[bitfield(u8, default: 0)]
 #[derive(Default)]
 pub struct DesignatedIndex {
+  /// Which RAM chip?
   #[bits(6..=7, rw)]
   chip_index: u2,
 
+  /// Which register?
   #[bits(4..=5, rw)]
   reg_index: u2,
 
+  /// Which character address?
   #[bits(0..=3, rw)]
   char_index: u4,
 }
 
+/// 12 bit ROM address
 #[bitfield(u16, default: 0)]
 #[derive(Default)]
 pub struct ROMAddress {
   #[bits(12..=15, rw)]
   _reserved: u4,
 
+  /// Which ROM chip?
   #[bits(8..=11, rw)]
   chip_index: u4,
 
+  /// Which address inside of the ROM chip?
   #[bits(0..=7, rw)]
   offset: u8,
 }
@@ -50,6 +67,7 @@ struct PairOp {
   low: usize,
 }
 
+/// Intel 4004 chip
 #[derive(Default)]
 pub struct I4004 {
   regs: [u4; 16],
@@ -63,9 +81,11 @@ pub struct I4004 {
   stack: [ROMAddress; 4],
   effective_address: usize,
   push_count: usize,
-  pc: ROMAddress, //Program Counter
+  /// Program Counter
+  pc: ROMAddress,
 }
 impl I4004 {
+  /// Create a new chip
   pub fn new() -> Self {
     Default::default()
   }
@@ -93,12 +113,14 @@ impl I4004 {
     self.pc = self.pc.with_offset(low_byte);
   }
   
+  /// Print debug data of all registers
   pub fn print(&self) {
     debug!("R0: {:X} R1: {:X} R2: {:X} R3: {:X} R4: {:X} R5: {:X} R6: {:X} R7: {:X}", self.regs[0].value(), self.regs[1].value(), self.regs[2].value(), self.regs[3].value(), self.regs[4].value(), self.regs[5].value(), self.regs[6].value(), self.regs[7].value());
     debug!("R8: {:X} R9: {:X} RA: {:X} RB: {:X} RC: {:X} RD: {:X} RE: {:X} RF: {:X}", self.regs[8].value(), self.regs[9].value(), self.regs[10].value(), self.regs[11].value(), self.regs[12].value(), self.regs[13].value(), self.regs[14].value(), self.regs[15].value());
     debug!("PC: {:X} Acc: {:X} Carry: {} Test: {} Designated Index: {} {} {}", self.pc.raw_value(), self.acc.value(), self.carry, self.test, self.designated_index.chip_index(), self.designated_index.reg_index(), self.designated_index.char_index());
   }
   
+  /// Get current PC (Program Counter) - Position we are in ROM
   pub fn get_pc(&self) -> u16 {
     self.pc.raw_value()
   }
@@ -108,6 +130,7 @@ impl I4004 {
     self.acc = u4::new(val & 0xF);
   }
   
+  /// Set test flag. This is the only way chips could signal the 4004 directly.
   pub fn set_test_flag(&mut self, test: bool) {
     self.test = test;
   }
@@ -118,6 +141,12 @@ impl I4004 {
     ret
   }
 
+  /// Executes single instruction:
+  ///
+  /// 1. Read the next byte from ROM
+  /// 2. Decode byte with big `match` statement.
+  /// 3. If 2 byte instruction found, read another byte from ROM.
+  /// 4. Execute instruction.
   pub fn run_cycle(&mut self, io: &mut impl IO) {
     let opcode = self.next_rom_byte(io);
     match opcode {

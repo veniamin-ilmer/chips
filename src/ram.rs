@@ -2,14 +2,25 @@
 //! Example use:
 //!
 //! ```
-//! use chips::ram::RAM;
+//! use chips::RAM;
 //!
 //! let mut ram: RAM<u8, 200> = RAM::new();
 //! ram.write(123, 8);
 //! assert_eq!(ram.read(123), 8);
 //! ```
 
+/// Generic RAM Chip
+/// Example use:
+///
+/// ```
+/// use chips::RAM;
+///
+/// let mut ram: RAM<u8, 200> = RAM::new();
+/// ram.write(123, 8);
+/// assert_eq!(ram.read(123), 8);
+/// ```
 pub struct RAM<TYPE: Sized, const LENGTH: usize> {
+  /// Data in the ROM chip
   pub data: [TYPE; LENGTH],
 }
 
