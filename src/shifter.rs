@@ -1,5 +1,13 @@
 //! Generic Shift Register Chip
-//! Example use:
+//!
+//! Shift registers have been a historical way to store a few bits of data.
+//! There are two ways to read and write the data. Serial and parallel. Parallel data access is what we are used to with modern processors, where we can load all bits of a byte at the same time.
+//! Serial is where you only read/write data one bit at a time.
+//! If for example you have only one wire, then you could only communicate through it by one bit at a time.
+//! It is called a shift register because in serial mode, bits are literally being shifted over.
+//! In order to read old bits, you need to push new bits in.
+//!
+//! ### Example
 //!
 //! ```
 //! use chips::shifter::Shifter;
@@ -7,6 +15,7 @@
 //! let shifter = Shifter<10>::new();
 //! shifter.read_write_serial(false, true);
 //! shifter.read_write_serial(true, true);
+//! ```
 
 pub struct Shifter<const NUM_BITS: usize> {
   bits: usize,
