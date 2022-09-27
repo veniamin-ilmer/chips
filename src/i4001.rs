@@ -3,10 +3,6 @@
 use arbitrary_int::u4;
 use crate::rom::ROM;
 
-pub trait IO {
-  fn out_port(&mut self, value: u4);
-}
-
 pub struct I4001 {
   rom: ROM<0x100>,
   ports: u4,

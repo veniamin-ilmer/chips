@@ -6,13 +6,6 @@ use crate::ram::RAM;
 use log::warn;
 use arbitrary_int::{u2, u4};
 
-pub trait IO {
-  fn port0(&mut self, value: bool);
-  fn port1(&mut self, value: bool);
-  fn port2(&mut self, value: bool);
-  fn port3(&mut self, value: bool);
-}
-
 #[derive(Default)]
 struct Register {
   characters: RAM<u4, 16>,
@@ -79,7 +72,7 @@ impl I4002 {
   #[inline]
   pub fn read_character_array(&self, reg_index: u2) -> [u4; 16] {
     if let Some(register) = self.registers.get(reg_index.value() as usize) {
-      register.characters.data.clone()
+      register.characters.data
     } else {
       warn!("Register index too big: {}", reg_index);
       Default::default()
@@ -89,7 +82,7 @@ impl I4002 {
   #[inline]
   pub fn read_status_array(&self, reg_index: u2) -> [u4; 4] {
     if let Some(register) = self.registers.get(reg_index.value() as usize) {
-      register.status.data.clone()
+      register.status.data
     } else {
       warn!("Register index too big: {}", reg_index);
       Default::default()

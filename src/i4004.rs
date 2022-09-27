@@ -217,9 +217,7 @@ impl I4004 {
       0xb0..=0xbf => {
         let reg_op = self.get_reg(opcode);
         trace!("XCH R{:X} - Exchange register with accumulator", reg_op);
-        let temp = self.acc;
-        self.acc = self.regs[reg_op];
-        self.regs[reg_op] = temp;
+        core::mem::swap(&mut self.acc, &mut self.regs[reg_op])
       },
       0xc0..=0xcf => {
         self.acc = u4::new(opcode & 0xF);
