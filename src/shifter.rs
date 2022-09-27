@@ -6,6 +6,7 @@
 //! If for example you have only one wire, then you could only communicate through it by one bit at a time.
 //! It is called a shift register because in serial mode, bits are literally being shifted over.
 //! In order to read old bits, you need to push new bits in.
+//! In order to load new serial data, the "clock" book needs to be switched from true to false. The actual clock rate does not matter. What matters is that the clock keeps switching, up and down.
 //!
 //! ### Example
 //!
