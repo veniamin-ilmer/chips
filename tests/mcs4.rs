@@ -7,8 +7,6 @@ use chips::i4001;
 use chips::i4002;
 use chips::i4004;
 
-use simplelog::*;
-
 use std::time;
 
 fn convert_ram_index(command_control: u4, designated_index: i4004::DesignatedIndex) -> usize {
@@ -79,24 +77,12 @@ fn test() {
           i4001s: &mut i4001s,
           i4002s: &mut i4002s,
         };
-        i4004.single_run(&mut i4004_io);
+        i4004.run_cycle(&mut i4004_io);
       }
       
-      {
-        let mut i4002_io = I4002IO {
-          i4004: &mut i4004,
-        };
-        for i4002 in &mut i4002s {
-          i4002.single_run(&mut i4002_io);
-        }
-      }
-      {
-        let mut i4001_io = I4001IO {
-        };
-        for i4001 in &mut i4001s {
-          i4001.single_run(&mut i4001_io);
-        }
-      }
+      //This is wired in the test board
+      i4004.set_test_flag(i4002s[0].read_ports().value() & 1 == 1);
+
       if i4004.get_pc() & 0xFF == 0x50 {
         return; //Success
       }
@@ -111,37 +97,37 @@ struct I4004IO<'a> {
   i4002s: &'a mut [i4002::I4002; 2],
 }
 impl i4004::IO for I4004IO<'_> {
-  fn read_rom(&self, address: i4004::ROMAddress) -> u8 {
+  fn read_rom_byte(&self, address: i4004::ROMAddress) -> u8 {
     let high_addr = address.chip_index().value() as usize;
     let low_addr = address.offset();
     let i4001 = &self.i4001s[high_addr % self.i4001s.len()];  //Wrap around
-    i4001.read_rom(low_addr)
+    i4001.read_byte(low_addr)
   }
   
-  fn read_rom_port(&self, designated_index: i4004::DesignatedIndex) -> u4 {
+  fn read_rom_ports(&self, designated_index: i4004::DesignatedIndex) -> u4 {
     let high_addr = (designated_index.chip_index() << 2 | designated_index.reg_index()).value() as usize;
     let i4001 = &self.i4001s[high_addr % self.i4001s.len()];  //Wrap around
-    i4001.read_port()
+    i4001.read_ports()
   }
-  fn write_rom_port(&mut self, designated_index: i4004::DesignatedIndex, value: u4) {
+  fn write_rom_ports(&mut self, designated_index: i4004::DesignatedIndex, value: u4) {
     let high_addr = (designated_index.chip_index() << 2 | designated_index.reg_index()).value() as usize;
     let i4001 = &mut self.i4001s[high_addr % self.i4001s.len()];  //Wrap around
-    i4001.write_port(value);
+    i4001.write_ports(value);
   }
   
-  fn read_ram(&self, command_control: u4, designated_index: i4004::DesignatedIndex) -> u4 {
+  fn read_ram_character(&self, command_control: u4, designated_index: i4004::DesignatedIndex) -> u4 {
     let high_addr = convert_ram_index(command_control, designated_index);
     if let Some(i4002) = self.i4002s.get(high_addr) {
-      i4002.read_ram(designated_index.reg_index(), designated_index.char_index())
+      i4002.read_character(designated_index.reg_index(), designated_index.char_index())
     } else {
       warn!("Write to nonexisting ram {}.", high_addr);
       u4::new(0)
     }
   }
-  fn write_ram(&mut self, command_control: u4, designated_index: i4004::DesignatedIndex, value: u4) {
+  fn write_ram_character(&mut self, command_control: u4, designated_index: i4004::DesignatedIndex, value: u4) {
     let high_addr = convert_ram_index(command_control, designated_index);
     if let Some(i4002) = self.i4002s.get_mut(high_addr) {
-      i4002.write_ram(designated_index.reg_index(), designated_index.char_index(), value);
+      i4002.write_character(designated_index.reg_index(), designated_index.char_index(), value);
     } else {
       warn!("Write to nonexisting ram {}.", high_addr);
     }
@@ -163,42 +149,12 @@ impl i4004::IO for I4004IO<'_> {
       warn!("Write to nonexisting ram {}.", high_addr);
     }
   }
-  fn write_ram_port(&mut self, command_control: u4, designated_index: i4004::DesignatedIndex, value: u4) {
+  fn write_ram_ports(&mut self, command_control: u4, designated_index: i4004::DesignatedIndex, value: u4) {
     let high_addr = convert_ram_index(command_control, designated_index);
     if let Some(i4002) = self.i4002s.get_mut(high_addr) {
-      i4002.write_port(value);
+      i4002.write_ports(value);
     } else {
       warn!("Write to nonexisting ram {}.", high_addr);
     }
-  }
-}
-
-
-struct I4001IO {
-}
-impl i4001::IO for I4001IO {
-  fn port0(&mut self, _value: bool) {
-  }
-  fn port1(&mut self, _value: bool) {
-  }
-  fn port2(&mut self, _value: bool) {
-  }
-  fn port3(&mut self, _value: bool) {
-  }
-}
-
-
-struct I4002IO<'a> {
-  i4004: &'a mut i4004::I4004,
-}
-impl i4002::IO for I4002IO<'_> {
-  fn port0(&mut self, value: bool) {
-    self.i4004.set_test_flag(value);
-  }
-  fn port1(&mut self, _value: bool) {
-  }
-  fn port2(&mut self, _value: bool) {
-  }
-  fn port3(&mut self, _value: bool) {
   }
 }

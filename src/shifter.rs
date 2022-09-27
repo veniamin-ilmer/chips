@@ -13,7 +13,7 @@
 //! ```
 //! use chips::shifter::Shifter;
 //!
-//! let shifter = Shifter<10>::new();
+//! let mut shifter: Shifter<10> = Shifter::new();
 //! shifter.read_write_serial(false, true);
 //! shifter.read_write_serial(true, true);
 //! ```

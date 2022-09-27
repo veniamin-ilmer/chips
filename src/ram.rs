@@ -4,9 +4,10 @@
 //! ```
 //! use chips::ram::RAM;
 //!
-//! let ram = RAM<u4, 16>::new();
+//! let mut ram: RAM<u8, 200> = RAM::new();
 //! ram.write(123, 8);
 //! assert_eq!(ram.read(123), 8);
+//! ```
 
 pub struct RAM<TYPE: Sized, const LENGTH: usize> {
   pub data: [TYPE; LENGTH],
