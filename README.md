@@ -29,4 +29,5 @@ All chips were built to communicate with via calling IO trait functions. In orde
 
 * Intel 4001 ROM
 * Intel 4002 RAM
+* Intel 4003 Shift Register
 * Intel 4004 CPU
