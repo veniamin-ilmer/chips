@@ -1,3 +1,5 @@
+//! The 4001 ROM was limited to only 255 bytes of data. It was also unusual for having 4 io ports for the CPU to read/write with peripheral devices. Up to 16 ROM could be connected together, allowing for a maximum of 4 KB of binary code to be stored.
+
 use arbitrary_int::u4;
 use crate::rom::ROM;
 
