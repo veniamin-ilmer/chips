@@ -1,0 +1,1 @@
+pub type I4003 = crate::shifter::Shifter<10>;

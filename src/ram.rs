@@ -1,0 +1,42 @@
+//! Generic RAM Chip
+//! Example use:
+//!
+//! ```
+//! use chips::ram::RAM;
+//!
+//! let ram = RAM<u4, 16>::new();
+//! ram.write(123, 8);
+//! assert_eq!(ram.read(123), 8);
+
+pub struct RAM<TYPE: Sized, const LENGTH: usize> {
+  pub data: [TYPE; LENGTH],
+}
+
+impl<TYPE: core::marker::Copy + core::default::Default, const LENGTH: usize> Default for RAM<TYPE, LENGTH> {
+  #[inline]
+  fn default() -> Self {
+    Self {
+      data: [Default::default(); LENGTH]
+    }
+  }
+}
+
+impl<TYPE: core::marker::Copy + core::default::Default, const LENGTH: usize> RAM<TYPE, LENGTH> {
+  /// Create a new RAM chip
+  #[inline]
+  pub fn new() -> Self {
+    Default::default()
+  }
+
+  /// Read at address
+  #[inline]
+  pub fn read(&self, addr: usize) -> TYPE {
+    self.data[addr]
+  }
+
+  /// Write to address
+  #[inline]
+  pub fn write(&mut self, addr: usize, what: TYPE) {
+    self.data[addr] = what;
+  }
+}
