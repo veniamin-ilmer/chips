@@ -1,35 +1,28 @@
-//! Generic Shift Register Chip
-//!
-//! Shift registers have been a historical way to store a few bits of data.
-//! There are two ways to read and write the data. Serial and parallel. Parallel data access is what we are used to with modern processors, where we can load all bits of a byte at the same time.
-//! Serial is where you only read/write data one bit at a time.
-//! If for example you have only one wire, then you could only communicate through it by one bit at a time.
-//! It is called a shift register because in serial mode, bits are literally being shifted over.
-//! In order to read old bits, you need to push new bits in.
-//! In order to load new serial data, the "clock" book needs to be switched from true to false. The actual clock rate does not matter. What matters is that the clock keeps switching, up and down.
-//!
-//! ### Example
-//!
-//! ```
-//! use chips::Shifter;
-//!
-//! let mut shifter: Shifter<10> = Shifter::new();
-//! shifter.read_write_serial(false, true);
-//! shifter.read_write_serial(true, true);
-//! ```
+//! All Shift Register Chips
 
-/// Generic Shift Register Chip
+/// Intel 4003 is a shift register with 10 bits, capable of both serial and parallel read/write
+pub type I4003 = Shifter<10>;
+
+/// 7400 Series 8 bit shift register
+pub type S74X166 = Shifter<8>;
+
+/// ### Generic Shift Register Chip
 ///
 /// Shift registers have been a historical way to store a few bits of data.
+///
 /// There are two ways to read and write the data. Serial and parallel. Parallel data access is what we are used to with modern processors, where we can load all bits of a byte at the same time.
+///
 /// Serial is where you only read/write data one bit at a time.
+///
 /// If for example you have only one wire, then you could only communicate through it by one bit at a time.
+///
 /// It is called a shift register because in serial mode, bits are literally being shifted over.
+///
 /// In order to read old bits, you need to push new bits in.
+///
 /// In order to load new serial data, the "clock" book needs to be switched from true to false. The actual clock rate does not matter. What matters is that the clock keeps switching, up and down.
 ///
 /// ### Example
-///
 /// ```
 /// use chips::Shifter;
 ///
@@ -76,6 +69,7 @@ impl<const NUM_BITS: usize> Shifter<NUM_BITS> {
   }
   
   /// Write and Read to the shifter at the same time.
+  ///
   /// Write will only happen if `clock` switches from high to low. Otherwise `in_bit` will be ignored.
   #[inline]
   pub fn read_write_serial(&mut self, clock: bool, in_bit: bool) -> bool {

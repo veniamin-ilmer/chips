@@ -1,7 +1,14 @@
-//!The 4004 was produced in 1971, containing 2300 transistors.
-//!It ran at 740 kHz.
-//!It was the first commercially produce microprocessor.
-//!Primarily produced for the Busicom calculator.
+//! The 4004 was produced in 1971, containing 2300 transistors.
+//!
+//! Each clock cycle was 1.35 microseconds (740 kHz). Each instruction took 8 - 16 clock cycles. So, instructions took 10.8 - 21.6 microseconds (46.3 - 92.6 kHz).
+//!
+//! It was the first commercially produce microprocessor.
+//!
+//! Primarily produced for the Busicom calculator.
+//!
+//! Useful links:
+//! * <https://pyntel4004.readthedocs.io/en/latest/intro/opcodes.html>
+//! * <http://e4004.szyc.org/>
 
 use bitbybit::bitfield;
 use arbitrary_int::{u2,u4};
@@ -31,7 +38,6 @@ pub trait IO {
 
 /// The 4004 sets the designated address using the Send Register Control (SRC) instruction. It is used to designate the RAM address.
 #[bitfield(u8, default: 0)]
-#[derive(Default)]
 pub struct DesignatedIndex {
   /// Which RAM chip?
   #[bits(6..=7, rw)]
@@ -48,11 +54,7 @@ pub struct DesignatedIndex {
 
 /// 12 bit ROM address
 #[bitfield(u16, default: 0)]
-#[derive(Default)]
 pub struct ROMAddress {
-  #[bits(12..=15, rw)]
-  _reserved: u4,
-
   /// Which ROM chip?
   #[bits(8..=11, rw)]
   chip_index: u4,
@@ -104,7 +106,7 @@ impl I4004 {
   }
   
   fn jump(&mut self, low_byte: u8, high_nibble: u4) {
-    self.pc = ROMAddress::new()
+    self.pc = ROMAddress::DEFAULT
               .with_offset(low_byte)
               .with_chip_index(high_nibble);
   }
@@ -172,7 +174,7 @@ impl I4004 {
           trace!("FIM R{:X} = {:X}, R{:X} = {:X} - Fetch Immediate", pair.high, self.regs[pair.high].value(), pair.low, self.regs[pair.low].value());
         } else { //SRC
           trace!("SRC R{:X} R{:X} - Send Register Control - set designated index", pair.low, pair.high);
-          self.designated_index = DesignatedIndex::new()
+          self.designated_index = DesignatedIndex::DEFAULT
                                    .with_char_index(self.regs[pair.low])
                                    .with_reg_index(u2::new(self.regs[pair.high].value() & 0b11))
                                    .with_chip_index(u2::new(self.regs[pair.high].value() >> 2));
@@ -181,8 +183,8 @@ impl I4004 {
       0x30..=0x3f => {
         if opcode & 1 == 0 { //FIN
           let addr = self.regs[1].value() | (self.regs[0].value() << 4);
-          let full_addr = ROMAddress::new().with_chip_index(self.pc.chip_index())
-                                           .with_offset(addr);
+          let full_addr = ROMAddress::DEFAULT.with_chip_index(self.pc.chip_index())
+                                             .with_offset(addr);
           let opcode_low = io.read_rom_byte(full_addr);
           let pair = self.get_reg_pair(opcode);
           self.regs[pair.low] = u4::new(opcode_low & 0xf);

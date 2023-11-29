@@ -6,9 +6,10 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-bitbybit = "1.1.0"
-arbitrary-int = "1.2.1"
-log = "0.4.17"
+bitbybit = "1.2.2"
+arbitrary-int = { version="1.2.6", features=["num-traits"] }
+num-traits = { version="0.2.17", default-features = false }
+log = "0.4.20"
 
 [dev-dependencies]
-simplelog = "0.12.0"
+simplelog = "0.12.1"

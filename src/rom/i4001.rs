@@ -24,8 +24,8 @@ impl I4001 {
   
   /// Read ROM byte
   #[inline]
-  pub fn read_byte(&self, addr: u8) -> u8 {
-    self.rom.read_byte(addr as usize)
+  pub fn read(&self, addr: u8) -> u8 {
+    self.rom.read(addr as usize)
   }
   
   /// Read all 4 port bits
