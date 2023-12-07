@@ -372,7 +372,7 @@ impl F3850 {
                   .with_negative(result & 0b1000_0000 == 0b1000_0000)
                   .with_carry(carry8)
                   .with_zero(result == 0)
-                  .with_carry(carry8 ^ carry7);
+                  .with_overflow(carry8 ^ carry7);
     result
   }
   
