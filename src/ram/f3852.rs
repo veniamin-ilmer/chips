@@ -4,7 +4,7 @@ use crate::RAM;
 use log::debug;
 use arbitrary_int::u6;
 
-const RAM_SIZE: usize = 2048;
+const RAM_SIZE: usize = 1028;
 
 /// Fairchild 3852 RAM chip
 pub struct F3852 {

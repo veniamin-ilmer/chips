@@ -122,12 +122,12 @@ impl F3850 {
     trace!("Interrupt: {} Overflow: {} Zero: {} Carry: {} Negative: {}", self.flags.interrupt(), self.flags.overflow(), self.flags.zero(), self.flags.carry(), self.flags.negative());
     trace!("R00: 0x{:02X} R01: 0x{:02X} R02: 0x{:02X} R03: 0x{:02X} R04: 0x{:02X}, R05: 0x{:02X} R06: 0x{:02X} R07: 0x{:02X}", self.regs[0x00], self.regs[0x01], self.regs[0x02], self.regs[0x03], self.regs[0x04], self.regs[0x05], self.regs[0x06], self.regs[0x07]);
     trace!("R08: 0x{:02X}   J: 0x{:02X}  HU: 0x{:02X}  HL: 0x{:02X}  KU: 0x{:02X},  KL: 0x{:02X}  QU: 0x{:02X}  QL: 0x{:02X}", self.regs[0x08], self.regs[0x09], self.regs[0x0A], self.regs[0x0B], self.regs[0x0C], self.regs[0x0D], self.regs[0x0E], self.regs[0x0F]);
-    trace!("R10: 0x{:02X} R11: 0x{:02X} R12: 0x{:02X} R13: 0x{:02X} R14: 0x{:02X}, R15: 0x{:02X} R16: 0x{:02X} R17: 0x{:02X}", self.regs[0x10], self.regs[0x11], self.regs[0x12], self.regs[0x13], self.regs[0x14], self.regs[0x15], self.regs[0x16], self.regs[0x17]);
-    trace!("R18: 0x{:02X} R19: 0x{:02X} R1A: 0x{:02X} R1B: 0x{:02X} R1C: 0x{:02X}, R1D: 0x{:02X} R1E: 0x{:02X} R1F: 0x{:02X}", self.regs[0x18], self.regs[0x19], self.regs[0x1A], self.regs[0x1B], self.regs[0x1C], self.regs[0x1D], self.regs[0x1E], self.regs[0x1F]);
-    trace!("R20: 0x{:02X} R21: 0x{:02X} R22: 0x{:02X} R23: 0x{:02X} R24: 0x{:02X}, R25: 0x{:02X} R26: 0x{:02X} R27: 0x{:02X}", self.regs[0x20], self.regs[0x21], self.regs[0x22], self.regs[0x23], self.regs[0x24], self.regs[0x25], self.regs[0x26], self.regs[0x27]);
-    trace!("R28: 0x{:02X} R29: 0x{:02X} R2A: 0x{:02X} R2B: 0x{:02X} R2C: 0x{:02X}, R2D: 0x{:02X} R2E: 0x{:02X} R2F: 0x{:02X}", self.regs[0x28], self.regs[0x29], self.regs[0x2A], self.regs[0x2B], self.regs[0x2C], self.regs[0x2D], self.regs[0x2E], self.regs[0x2F]);
-    trace!("R30: 0x{:02X} R31: 0x{:02X} R32: 0x{:02X} R33: 0x{:02X} R34: 0x{:02X}, R35: 0x{:02X} R36: 0x{:02X} R37: 0x{:02X}", self.regs[0x30], self.regs[0x31], self.regs[0x32], self.regs[0x33], self.regs[0x34], self.regs[0x35], self.regs[0x36], self.regs[0x37]);
-    trace!("R38: 0x{:02X} R39: 0x{:02X} R3A: 0x{:02X} R3B: 0x{:02X} R3C: 0x{:02X}, R3D: 0x{:02X} R3E: 0x{:02X} R3F: 0x{:02X}", self.regs[0x38], self.regs[0x39], self.regs[0x3A], self.regs[0x3B], self.regs[0x3C], self.regs[0x3D], self.regs[0x3E], self.regs[0x3F]);
+    //trace!("R10: 0x{:02X} R11: 0x{:02X} R12: 0x{:02X} R13: 0x{:02X} R14: 0x{:02X}, R15: 0x{:02X} R16: 0x{:02X} R17: 0x{:02X}", self.regs[0x10], self.regs[0x11], self.regs[0x12], self.regs[0x13], self.regs[0x14], self.regs[0x15], self.regs[0x16], self.regs[0x17]);
+    //trace!("R18: 0x{:02X} R19: 0x{:02X} R1A: 0x{:02X} R1B: 0x{:02X} R1C: 0x{:02X}, R1D: 0x{:02X} R1E: 0x{:02X} R1F: 0x{:02X}", self.regs[0x18], self.regs[0x19], self.regs[0x1A], self.regs[0x1B], self.regs[0x1C], self.regs[0x1D], self.regs[0x1E], self.regs[0x1F]);
+    //trace!("R20: 0x{:02X} R21: 0x{:02X} R22: 0x{:02X} R23: 0x{:02X} R24: 0x{:02X}, R25: 0x{:02X} R26: 0x{:02X} R27: 0x{:02X}", self.regs[0x20], self.regs[0x21], self.regs[0x22], self.regs[0x23], self.regs[0x24], self.regs[0x25], self.regs[0x26], self.regs[0x27]);
+    //trace!("R28: 0x{:02X} R29: 0x{:02X} R2A: 0x{:02X} R2B: 0x{:02X} R2C: 0x{:02X}, R2D: 0x{:02X} R2E: 0x{:02X} R2F: 0x{:02X}", self.regs[0x28], self.regs[0x29], self.regs[0x2A], self.regs[0x2B], self.regs[0x2C], self.regs[0x2D], self.regs[0x2E], self.regs[0x2F]);
+    //trace!("R30: 0x{:02X} R31: 0x{:02X} R32: 0x{:02X} R33: 0x{:02X} R34: 0x{:02X}, R35: 0x{:02X} R36: 0x{:02X} R37: 0x{:02X}", self.regs[0x30], self.regs[0x31], self.regs[0x32], self.regs[0x33], self.regs[0x34], self.regs[0x35], self.regs[0x36], self.regs[0x37]);
+    //trace!("R38: 0x{:02X} R39: 0x{:02X} R3A: 0x{:02X} R3B: 0x{:02X} R3C: 0x{:02X}, R3D: 0x{:02X} R3E: 0x{:02X} R3F: 0x{:02X}", self.regs[0x38], self.regs[0x39], self.regs[0x3A], self.regs[0x3B], self.regs[0x3C], self.regs[0x3D], self.regs[0x3E], self.regs[0x3F]);
   }
 
   /// Executes single instruction:
@@ -175,19 +175,14 @@ impl F3850 {
       
       0x16 => { debug!("LM"); self.acc = io.next_data(); 10 }, //Load Memory
       0x17 => { debug!("SM"); io.write_data(self.acc); 10 },   //Store Memory
-
-      0x18 => { debug!("COM"); self.acc = !self.acc; self.set_flags(); 4 },  //Complement / invert / not
       
-      0x19 => { debug!("LNK");
-        if self.flags.carry() {
-          self.acc = self.add_and_set_flags(self.acc, 1);
-        }
-        4
-      },
+      0x18 => { debug!("COM"); self.acc = !self.acc; self.set_flags(); 4 },  //Complement / invert / not
+
+      0x19 => { debug!("LNK"); self.acc = self.add_and_set_flags(self.acc, self.flags.carry() as u8); 4},
       
       0x1A => { debug!("DI"); self.flags = self.flags.with_interrupt(false); 4 },  //Disable Interrupts
       0x1B => { debug!("EI"); self.flags = self.flags.with_interrupt(true); 4 },  //Enable Interrupts
-      
+
       0x1C => { debug!("POP"); io.ret_pc(); 8 } //Return from PK / PI / IRQ.
       
       0x1D => { debug!("LR W, J"); self.flags = Flags::new_with_raw_value(self.regs[9]); 4 }
@@ -202,7 +197,7 @@ impl F3850 {
           0x22 => { debug!("OI 0x{:02X}", imm); self.acc |= imm; self.set_flags(); 10 },   //Or Immediate
           0x23 => { debug!("XI 0x{:02X}", imm); self.acc ^= imm; self.set_flags(); 10 },  //Xor Immediate
           0x24 => { debug!("AI 0x{:02X}", imm); self.acc = self.add_and_set_flags(imm, self.acc); 10 },   //Add Immediate
-          0x25 => { debug!("CI 0x{:02X}", imm); self.add_and_set_flags(imm, (-(self.acc as i16)) as u8); 10 },//subtract Immediate but only set status
+          0x25 => { debug!("CI 0x{:02X}", imm); self.subtract_and_set_flags(imm); 10 }, //subtract Immediate but only set status.
           0x26 => { debug!("IN 0x{:02X}", imm); self.input(io, imm); 16 },  //INput
           _ => { debug!("OUT 0x{:02X}", imm); self.output(io, imm); 16 }, //0x27. OUTput
         }
@@ -218,7 +213,6 @@ impl F3850 {
       }
       0x2B => { debug!("NOP"); 4 }, //No Operation
       0x2C => { debug!("XDC"); io.swap_dc(); 8 },  //eXchange DC
-
       0x30..=0x5F => {
         let reg = self.reg_or_isar(opcode & 0xF);
         match opcode {
@@ -260,7 +254,7 @@ impl F3850 {
           0x8A => { debug!("NM {}", data); self.acc &= data; self.set_flags(); }, //aNd Memory
           0x8B => { debug!("OM {}", data); self.acc |= data; self.set_flags(); }, //Or Memory
           0x8C => { debug!("XM {}", data); self.acc ^= data; self.set_flags(); }, //Xor Memory
-          _ => { debug!("CM {}", data); self.add_and_set_flags(data, (-(self.acc as i16)) as u8); }, //subtract Memory, but only update status
+          _ => { debug!("CM {}", data); self.subtract_and_set_flags(data); }, //subtract Memory, but only update status
         };
         10
       }
@@ -373,6 +367,27 @@ impl F3850 {
   fn add_and_set_flags(&mut self, num1: u8, num2: u8) -> u8 {
     let (result, carry8) = num1.overflowing_add(num2);
     let (_, carry7) = (num1 << 1).overflowing_add(num2 << 1);
+
+    self.flags = self.flags
+                  .with_negative(result & 0b1000_0000 == 0b1000_0000)
+                  .with_carry(carry8)
+                  .with_zero(result == 0)
+                  .with_carry(carry8 ^ carry7);
+    result
+  }
+  
+  /// Subtracts number from accumulator, all flags
+  fn subtract_and_set_flags(&mut self, num1: u8) -> u8 {
+    let num2 = !self.acc; //We will be taking the two's complement by first doing NOT on the accumulator, and then adding 1
+
+    let (intermediate, carry8_first) = num1.overflowing_add(num2);
+    let (_, carry7_first) = (num1 << 1).overflowing_add(num2 << 1);
+
+    let (result, carry8_extra) = intermediate.overflowing_add(1);
+    let (_, carry7_extra) = (num1 << 1).overflowing_add(1 << 1);
+
+    let carry8 = carry8_first | carry8_extra;
+    let carry7 = carry7_first | carry7_extra;
 
     self.flags = self.flags
                   .with_negative(result & 0b1000_0000 == 0b1000_0000)
