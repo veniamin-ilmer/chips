@@ -120,14 +120,13 @@ impl F3850 {
   pub fn print(&self) {
     trace!("Acc: 0x{:02X} ISAR: 0x{:02X}", self.acc, self.isar);
     trace!("Interrupt: {} Overflow: {} Zero: {} Carry: {} Negative: {}", self.flags.interrupt(), self.flags.overflow(), self.flags.zero(), self.flags.carry(), self.flags.negative());
-    trace!("R00: 0x{:02X} R01: 0x{:02X} R02: 0x{:02X} R03: 0x{:02X} R04: 0x{:02X}, R05: 0x{:02X} R06: 0x{:02X} R07: 0x{:02X}", self.regs[0x00], self.regs[0x01], self.regs[0x02], self.regs[0x03], self.regs[0x04], self.regs[0x05], self.regs[0x06], self.regs[0x07]);
-    trace!("R08: 0x{:02X}   J: 0x{:02X}  HU: 0x{:02X}  HL: 0x{:02X}  KU: 0x{:02X},  KL: 0x{:02X}  QU: 0x{:02X}  QL: 0x{:02X}", self.regs[0x08], self.regs[0x09], self.regs[0x0A], self.regs[0x0B], self.regs[0x0C], self.regs[0x0D], self.regs[0x0E], self.regs[0x0F]);
-    //trace!("R10: 0x{:02X} R11: 0x{:02X} R12: 0x{:02X} R13: 0x{:02X} R14: 0x{:02X}, R15: 0x{:02X} R16: 0x{:02X} R17: 0x{:02X}", self.regs[0x10], self.regs[0x11], self.regs[0x12], self.regs[0x13], self.regs[0x14], self.regs[0x15], self.regs[0x16], self.regs[0x17]);
-    //trace!("R18: 0x{:02X} R19: 0x{:02X} R1A: 0x{:02X} R1B: 0x{:02X} R1C: 0x{:02X}, R1D: 0x{:02X} R1E: 0x{:02X} R1F: 0x{:02X}", self.regs[0x18], self.regs[0x19], self.regs[0x1A], self.regs[0x1B], self.regs[0x1C], self.regs[0x1D], self.regs[0x1E], self.regs[0x1F]);
-    //trace!("R20: 0x{:02X} R21: 0x{:02X} R22: 0x{:02X} R23: 0x{:02X} R24: 0x{:02X}, R25: 0x{:02X} R26: 0x{:02X} R27: 0x{:02X}", self.regs[0x20], self.regs[0x21], self.regs[0x22], self.regs[0x23], self.regs[0x24], self.regs[0x25], self.regs[0x26], self.regs[0x27]);
-    //trace!("R28: 0x{:02X} R29: 0x{:02X} R2A: 0x{:02X} R2B: 0x{:02X} R2C: 0x{:02X}, R2D: 0x{:02X} R2E: 0x{:02X} R2F: 0x{:02X}", self.regs[0x28], self.regs[0x29], self.regs[0x2A], self.regs[0x2B], self.regs[0x2C], self.regs[0x2D], self.regs[0x2E], self.regs[0x2F]);
-    //trace!("R30: 0x{:02X} R31: 0x{:02X} R32: 0x{:02X} R33: 0x{:02X} R34: 0x{:02X}, R35: 0x{:02X} R36: 0x{:02X} R37: 0x{:02X}", self.regs[0x30], self.regs[0x31], self.regs[0x32], self.regs[0x33], self.regs[0x34], self.regs[0x35], self.regs[0x36], self.regs[0x37]);
-    //trace!("R38: 0x{:02X} R39: 0x{:02X} R3A: 0x{:02X} R3B: 0x{:02X} R3C: 0x{:02X}, R3D: 0x{:02X} R3E: 0x{:02X} R3F: 0x{:02X}", self.regs[0x38], self.regs[0x39], self.regs[0x3A], self.regs[0x3B], self.regs[0x3C], self.regs[0x3D], self.regs[0x3E], self.regs[0x3F]);
+    trace!("R00: 0x{:02X} R01: 0x{:02X} R02: 0x{:02X} R03: 0x{:02X} R04: 0x{:02X}, R05: 0x{:02X} R06: 0x{:02X} R07: 0x{:02X} R10: 0x{:02X}   J: 0x{:02X}  HU: 0x{:02X}  HL: 0x{:02X}  KU: 0x{:02X},  KL: 0x{:02X}  QU: 0x{:02X}  QL: 0x{:02X}", self.regs[0x00], self.regs[0x01], self.regs[0x02], self.regs[0x03], self.regs[0x04], self.regs[0x05], self.regs[0x06], self.regs[0x07], self.regs[0x08], self.regs[0x09], self.regs[0x0A], self.regs[0x0B], self.regs[0x0C], self.regs[0x0D], self.regs[0x0E], self.regs[0x0F]);
+    //trace!("R20: 0x{:02X} R11: 0x{:02X} R12: 0x{:02X} R13: 0x{:02X} R14: 0x{:02X}, R15: 0x{:02X} R16: 0x{:02X} R17: 0x{:02X}", self.regs[0x10], self.regs[0x11], self.regs[0x12], self.regs[0x13], self.regs[0x14], self.regs[0x15], self.regs[0x16], self.regs[0x17]);
+    //trace!("R38: 0x{:02X} R19: 0x{:02X} R1A: 0x{:02X} R1B: 0x{:02X} R1C: 0x{:02X}, R1D: 0x{:02X} R1E: 0x{:02X} R1F: 0x{:02X}", self.regs[0x18], self.regs[0x19], self.regs[0x1A], self.regs[0x1B], self.regs[0x1C], self.regs[0x1D], self.regs[0x1E], self.regs[0x1F]);
+    //trace!("R40: 0x{:02X} R21: 0x{:02X} R22: 0x{:02X} R23: 0x{:02X} R24: 0x{:02X}, R25: 0x{:02X} R26: 0x{:02X} R27: 0x{:02X}", self.regs[0x20], self.regs[0x21], self.regs[0x22], self.regs[0x23], self.regs[0x24], self.regs[0x25], self.regs[0x26], self.regs[0x27]);
+    //trace!("R58: 0x{:02X} R29: 0x{:02X} R2A: 0x{:02X} R2B: 0x{:02X} R2C: 0x{:02X}, R2D: 0x{:02X} R2E: 0x{:02X} R2F: 0x{:02X}", self.regs[0x28], self.regs[0x29], self.regs[0x2A], self.regs[0x2B], self.regs[0x2C], self.regs[0x2D], self.regs[0x2E], self.regs[0x2F]);
+    //trace!("R60: 0x{:02X} R31: 0x{:02X} R32: 0x{:02X} R33: 0x{:02X} R34: 0x{:02X}, R35: 0x{:02X} R36: 0x{:02X} R37: 0x{:02X}", self.regs[0x30], self.regs[0x31], self.regs[0x32], self.regs[0x33], self.regs[0x34], self.regs[0x35], self.regs[0x36], self.regs[0x37]);
+    //trace!("R78: 0x{:02X} R39: 0x{:02X} R3A: 0x{:02X} R3B: 0x{:02X} R3C: 0x{:02X}, R3D: 0x{:02X} R3E: 0x{:02X} R3F: 0x{:02X}", self.regs[0x38], self.regs[0x39], self.regs[0x3A], self.regs[0x3B], self.regs[0x3C], self.regs[0x3D], self.regs[0x3E], self.regs[0x3F]);
   }
 
   /// Executes single instruction:
@@ -213,6 +212,8 @@ impl F3850 {
       }
       0x2B => { debug!("NOP"); 4 }, //No Operation
       0x2C => { debug!("XDC"); io.swap_dc(); 8 },  //eXchange DC
+      
+      0x2F => { console_log::init_with_level(log::Level::Trace); 0 }
       0x30..=0x5F => {
         let reg = self.reg_or_isar(opcode & 0xF);
         match opcode {
@@ -317,22 +318,19 @@ impl F3850 {
     (match reg {
       0..=11 => reg,
       12 => self.isar,
-      13 => { //Select the ISAR, then ISAR += 1
+      _ => {
         let isar = self.isar;
-        self.isar = if self.isar == 0b111111 {
-          0  //Wrap it around
-        } else {
-          self.isar + 1
+        let isar_low = self.isar & 0b111;
+        let new_isar_low = match (reg, isar_low) {
+          (13, 0b111) => 0, //Wrap it around
+          (13, _) => isar_low + 1,
+          
+          (14, 0) => 0b111, //Wrap it around
+          (14, _) => isar_low - 1,
+          
+          _ => unreachable!(),
         };
-        isar
-      },
-      14 => { //Select the ISAR, then ISAR -= 1
-        let isar = self.isar;
-        self.isar = if self.isar == 0 {
-          0b111111  //Wrap it around.
-        } else {
-          self.isar - 1
-        };
+        self.isar = (self.isar & 0b111000) | new_isar_low;
         isar
       },
       _ => unreachable!(),
@@ -417,7 +415,7 @@ impl F3850 {
   /// OUTput will only set the internal port values. Not external.
   fn output(&mut self, io: &mut impl IO, port: u8) {
     match port {
-      0..=3 => self.ports[port as usize] = self.acc,
+      0..=3 => {self.ports[port as usize] = self.acc; io.output(port, self.acc);},
       _ => io.output(port, self.acc),
     };
   }
