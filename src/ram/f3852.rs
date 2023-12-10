@@ -9,7 +9,7 @@ const RAM_SIZE: usize = 1028;
 /// Fairchild 3852 RAM chip
 pub struct F3852 {
   /// RAM data
-  ram: RAM<RAM_SIZE>,
+  pub ram: RAM<RAM_SIZE>,
   /// This page mask is added to all memory pointers to know which memory chip is being referenced
   page_mask: usize,
   /// Process Counter 0
