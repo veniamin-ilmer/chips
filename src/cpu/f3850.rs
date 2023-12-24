@@ -213,7 +213,7 @@ impl F3850 {
       0x2B => { debug!("NOP"); 4 }, //No Operation
       0x2C => { debug!("XDC"); io.swap_dc(); 8 },  //eXchange DC
       
-      0x2F => { console_log::init_with_level(log::Level::Trace); 0 }
+      //0x2F => { console_log::init_with_level(log::Level::Trace); 0 }
       0x30..=0x5F => {
         let reg = self.reg_or_isar(opcode & 0xF);
         match opcode {
@@ -333,7 +333,6 @@ impl F3850 {
         self.isar = (self.isar & 0b111000) | new_isar_low;
         isar
       },
-      _ => unreachable!(),
     }) as usize
   }
   

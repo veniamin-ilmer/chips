@@ -3,6 +3,8 @@
 pub mod i4004; pub use i4004::I4004;
 pub mod i8080; pub use i8080::I8080;
 pub mod f3850; pub use f3850::F3850;
+pub mod hp_cnt; pub use hp_cnt::HP_CnT;
+pub mod hp_anr; pub use hp_anr::HP_AnR;
 
 /// The data is being requested from RAM and ROM chips with methods in this trait
 pub trait MemoryIO<ADDRESS> {
