@@ -31,3 +31,6 @@ All chips were built to communicate with via calling IO trait functions. In orde
 * Intel 4002 RAM
 * Intel 4003 Shift Register
 * Intel 4004 CPU
+* Fairchild 3850 CPU
+* Fairchild 3851 PSU (ROM)
+* Fairchild 3852 DMI (RAM)
