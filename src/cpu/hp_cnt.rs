@@ -29,6 +29,7 @@ pub struct HP_CnT {
   pub pointer: u4,
   /// Carry - Can we jump?
   carry: bool,
+  timer: usize,
 }
 
 impl HP_CnT {

@@ -181,7 +181,7 @@ impl HP_AnR {
           0b00110 => { trace!("C[{i}] = 0"); c = ZERO; },
           0b00111 => { trace!("C[{i}] = 0 - C[{i}] - 1");
             let (c1, carry1) = sub(ZERO, c, carry);
-            let (c2, carry2) = sub(c1, one, carry);
+            let (c2, carry2) = sub(c1, one, false);
             c = c2;
             carry = carry1 | carry2;
           },
