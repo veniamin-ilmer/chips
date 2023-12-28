@@ -13,6 +13,9 @@
 //! * <https://patentimages.storage.googleapis.com/44/5c/ab/197897f4ecaacb/US4001569.pdf>
 use log::{info,trace};
 
+use crate::shifter;
+pub type Register = shifter::Shifter<u64, 56>;
+
 use arbitrary_int::{
   u4,   //Register nibbles
   u5,   //Type 2 Operation code
@@ -53,40 +56,22 @@ struct WordSelect {
 }
 
 impl WordSelect {
-  fn shift(&mut self, is_left: bool) -> bool {
-    if is_left {
-      let carry = self.data & u14::new(0b10000000000000) == u14::new(0b10000000000000);
-      self.data <<= 1;
-      carry
-    } else {
-      let carry = self.data & u14::new(1) == u14::new(1);
-      self.data >>= 1;
-      carry
+  fn shift(&mut self, direction: shifter::Direction) -> bool {
+    match direction {
+      shifter::Direction::Left => {
+        let carry = self.data & u14::new(0b10000000000000) == u14::new(0b10000000000000); //Check 14th bit
+        self.data <<= 1;
+        carry
+      },
+      shifter::Direction::Right => {
+        let carry = self.data & u14::new(1) == u14::new(1);
+        self.data >>= 1;
+        carry
+      }
     }
   }
 }
 
-#[derive(Default, Copy, Clone, PartialEq)]
-pub struct Register {
-  data: u56,
-}
-
-impl Register {
-  pub fn get_nibble(&self, is_left: bool) -> u4 {
-    if is_left {
-      u4::new((self.data.value() >> 52) as u8)
-    } else {
-      u4::new((self.data.value() as u8) & 0xF)
-    }
-  }
-  pub fn rotate_with_nibble(&mut self, nibble: u4, is_left: bool) {
-    self.data = if is_left {
-      (self.data << 4) | u56::new(nibble.value() as u64)
-    } else {
-      (self.data >> 4) | u56::new((nibble.value() as u64) << 52)
-    };
-  }
-}
 
 // BCD add
 fn add(num1: u4, num2: u4, carry: bool) -> (u4, bool) {
@@ -133,17 +118,17 @@ impl HP_AnR {
   /// Print debug data of all registers
   pub fn print(&self) {
     trace!("A:{:014X} B:{:014X} C:{:014X} D:{:014X} E:{:014X} F:{:014X} M:{:014X} Carry: {}",
-      self.a.data.value(), self.b.data.value(), self.c.data.value(), self.d.data.value(), self.e.data.value(), self.f.data.value(), self.m.data.value(), self.next_carry
+      self.a.read_parallel(), self.b.read_parallel(), self.c.read_parallel(), self.d.read_parallel(), self.e.read_parallel(), self.f.read_parallel(), self.m.read_parallel(), self.next_carry
     );
   }
 
   /// Handles Type 2 and Type 5 opcodes
-  pub fn run_cycle(&mut self, opcode: u10, word_select_data: u14) {
+  pub fn run_cycle(&mut self, opcode: u10, word_select_data: u14, ram_data: Register) {
     self.next_carry = true; //Default, until proven otherwise.
     match opcode.value() & 0b11 {
       0b10 => self.type_2(u5::new((opcode.value() >> 5) as u8), WordSelect { data: word_select_data }),
       0b00 => if opcode.value() & 0b1111 == 0b1000 {
-        self.type_5(u6::new((opcode.value() >> 4) as u8), WordSelect { data: word_select_data });
+        self.type_5(u6::new((opcode.value() >> 4) as u8), WordSelect { data: word_select_data }, ram_data);
       },
       _ => {},  //C&T stuff
     }
@@ -157,12 +142,16 @@ impl HP_AnR {
     let mut carry = false;
     let mut first_digit = true;
     let mut prev_nibble = u4::new(0);
-    let is_left = matches!(operation_code.value(), 0b10010 | 0b10100 | 0b10110);
+    let direction = if matches!(operation_code.value(), 0b10010 | 0b10100 | 0b10110) {
+      shifter::Direction::Left
+    } else {
+      shifter::Direction::Right
+    };
     for i in 0..14 {
-      let mut a = self.a.get_nibble(is_left);
-      let mut b = self.b.get_nibble(is_left);
-      let mut c = self.c.get_nibble(is_left);
-      if word_select.shift(is_left) {
+      let mut a = self.a.read_nibble(direction);
+      let mut b = self.b.read_nibble(direction);
+      let mut c = self.c.read_nibble(direction);
+      if word_select.shift(direction) {
         //This is meant for math calculations, where we only need the first digit to be one.
         let one = if first_digit {
           first_digit = false;
@@ -217,25 +206,25 @@ impl HP_AnR {
           _ => { trace!("A[{i}]++"); (a, carry) = add(a, one, carry) }, //0b11111
         }
       }
-      self.a.rotate_with_nibble(a, is_left);
-      self.b.rotate_with_nibble(b, is_left);
-      self.c.rotate_with_nibble(c, is_left);
+      self.a.shift_with_nibble(direction, a);
+      self.b.shift_with_nibble(direction, b);
+      self.c.shift_with_nibble(direction, c);
     }
     self.next_carry = !carry; //Note carries are always recorded as opposites.
   }
   
   // Type 5 - Data Entry and Display
-  fn type_5(&mut self, instruction: u6, mut word_select: WordSelect) {
+  fn type_5(&mut self, instruction: u6, mut word_select: WordSelect, ram_data: Register) {
     match instruction.value() & 0b11 {
       0b00 => {}, //Reserved
       0b01 => { trace!("LOAD CONSTANT");
         for i in 0..14 {
-          let mut c = self.c.get_nibble(false);
-          if word_select.shift(false) {
+          let mut c = self.c.read_nibble(shifter::Direction::Right);
+          if word_select.shift(shifter::Direction::Right) {
             c = u4::new(instruction.value() >> 2);
             trace!("C[{}] = {}", i, c);
           }
-          self.c.rotate_with_nibble(c, false);
+          self.c.shift_with_nibble(shifter::Direction::Right, c);
         }
       },
       0b10 | 0b11 => {
@@ -246,6 +235,7 @@ impl HP_AnR {
           0b0110 => { trace!("POP A"); (self.e, self.d, self.a) = (self.f, self.e, self.d); }   //Down Stack
           0b1000 => { info!("Display off"); self.display_on = false; },
           0b1010 => { trace!("MOV C, M"); self.c = self.m; }  //Recall memory
+          0b1011 => { info!("C = Data Storage ({:014X})", ram_data.read_parallel()); self.c = ram_data; }, //Send Data from Auxiliary Data Storage Circuit into C Register
           0b1100 => { trace!("Rotate C"); (self.f, self.e, self.d, self.c) = (self.c, self.f, self.e, self.d); }  //Rotate Down
           0b1110 => { trace!("CLEAR REGS"); *self = HP_AnR::new(); },
           _ => unimplemented!(),

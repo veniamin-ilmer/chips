@@ -1,10 +1,12 @@
 //! All Shift Register Chips
 
+use arbitrary_int::{ u4 };
+
 /// Intel 4003 is a shift register with 10 bits, capable of both serial and parallel read/write
-pub type I4003 = Shifter<10>;
+pub type I4003 = Shifter<u16, 10>;
 
 /// 7400 Series 8 bit shift register
-pub type S74X166 = Shifter<8>;
+pub type S74X166 = Shifter<u8, 8>;
 
 /// ### Generic Shift Register Chip
 ///
@@ -20,8 +22,6 @@ pub type S74X166 = Shifter<8>;
 ///
 /// In order to read old bits, you need to push new bits in.
 ///
-/// In order to load new serial data, the "clock" book needs to be switched from true to false. The actual clock rate does not matter. What matters is that the clock keeps switching, up and down.
-///
 /// ### Example
 /// ```
 /// use chips::Shifter;
@@ -30,70 +30,271 @@ pub type S74X166 = Shifter<8>;
 /// shifter.read_write_serial(false, true);
 /// shifter.read_write_serial(true, true);
 /// ```
-pub struct Shifter<const NUM_BITS: usize> {
+#[derive(Default, Clone, Copy, PartialEq)]
+pub struct Shifter<T: BitOperations, const NUM_BITS: u32> {
   /// The shifter's "memory"
-  bits: usize,
-  /// We only shift data after clock switches from high to low, so we must keep track of the clock
-  clock: bool,
-  /// The previous shifted bit. While not shifting, we keep this the same.
-  out_bit: bool,
+  data: T,
+  /// We only shift data after pulse switches from high to low, so we must keep track of the pulse
+  pulse: bool,
 }
 
-impl<const NUM_BITS: usize> Default for Shifter<NUM_BITS> {
-  #[inline]
-  fn default() -> Self {
-    Self {
-      bits: 0,
-      clock: false,
-      out_bit: false,
-    }
-  }
-}
-
-impl<const NUM_BITS: usize> Shifter<NUM_BITS> {
+impl<T: BitOperations, const NUM_BITS: u32> Shifter<T, NUM_BITS> {
   /// Create a new Shifter chip
   #[inline]
   pub fn new() -> Self {
     Default::default()
   }
   
-  #[inline]
-  fn mask(&self) -> usize {
-    (1 << NUM_BITS) - 1
-  }
-  
   /// Overwrite all of the bits at once.
   #[inline]
-  pub fn write_parallel(&mut self, bits: usize) {
-    self.bits = bits & self.mask();
+  pub fn write_parallel(&mut self, data: T) {
+    self.data = data.mask(NUM_BITS);
   }
   
   /// Write and Read to the shifter at the same time.
   ///
-  /// Write will only happen if `clock` switches from high to low. Otherwise `in_bit` will be ignored.
+  /// Write will only happen if `pulse` switches from high to low. Otherwise `in_bit` will be ignored.
   #[inline]
-  pub fn read_write_serial(&mut self, clock: bool, in_bit: bool) -> bool {
-    if self.clock && !clock {  //Updates happen when switching from a high clock to low clock.
-      self.out_bit = (self.bits >> (NUM_BITS - 1)) & 1 == 1;
-      self.bits <<= 1;
-      self.bits &= self.mask();
-      if in_bit {
-        self.bits |= 1;
-      }
+  pub fn read_write_serial(&mut self, direction: Direction, in_bit: bool, pulse: bool) -> bool {
+    let out_bit = self.read_serial(direction);
+    if self.pulse && !pulse {  //Updates happen when switching from a high pulse to low pulse.
+      self.shift_with_bit(direction, in_bit);
     }
-    self.clock = clock;
-    self.out_bit
+    self.pulse = pulse;
+    out_bit
+  }
+  
+  /// Read bit
+  #[inline]
+  pub fn read_serial(&self, direction: Direction) -> bool {
+    self.data.read_bit(direction, NUM_BITS)
+  }
+
+  /// Write bit
+  #[inline]
+  pub fn shift_with_bit(&mut self, direction: Direction, in_bit: bool) {
+    self.data = self.data.shift_with_bit(direction, NUM_BITS, in_bit);
+  }
+  
+  /// Read nibble
+  #[inline]
+  pub fn read_nibble(&self, direction: Direction) -> u4 {
+    self.data.read_nibble(direction, NUM_BITS)
+  }  
+  
+  /// Write nibble
+  #[inline]
+  pub fn shift_with_nibble(&mut self, direction: Direction, nibble: u4) {
+    self.data = self.data.shift_with_nibble(direction, NUM_BITS, nibble);
   }
   
   /// Read all bits at once
   #[inline]
-  pub fn read_parallel(&self) -> usize {
-    self.bits
+  pub fn read_parallel(&self) -> T {
+    self.data
+  }
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum Direction {
+  Left,
+  Right,
+}
+
+pub trait BitOperations: Default + Copy {
+  fn mask(self, num_bits: u32) -> Self;
+  fn read_bit(self, direction: Direction, num_bits: u32) -> bool;
+  fn read_nibble(self, direction: Direction, num_bits: u32) -> u4;
+  fn shift_with_bit(self, direction: Direction, num_bits: u32, bit: bool) -> Self;
+  fn shift_with_nibble(self, direction: Direction, num_bits: u32, nibble: u4) -> Self;
+}
+
+/// Implement the BitOperations trait for u8
+impl BitOperations for u8 {
+  /// If left direction, writes right most bit
+  /// If right direction, writes left most bit
+  #[inline]
+  fn shift_with_bit(self, direction: Direction, num_bits: u32, bit: bool) -> Self {
+    let shifted = match direction {
+      Direction::Left => { let num = self << 1; num.mask(num_bits) },
+      Direction::Right => self >> 1,
+    };
+    if bit {
+      shifted | match direction {
+        Direction::Left => 1,
+        Direction::Right => 1 << num_bits,
+      }
+    } else {
+      shifted
+    }
+  }
+
+  /// If left direction, writes right most nibble
+  /// If right direction, writes left most nibble
+  #[inline]
+  fn shift_with_nibble(self, direction: Direction, num_bits: u32, nibble: u4) -> Self {
+    let shifted = match direction {
+      Direction::Left => { let num = self << 4; num.mask(num_bits) },
+      Direction::Right => self >> 4,
+    };
+    shifted | match direction {
+      Direction::Left => nibble.value(),
+      Direction::Right => nibble.value() << num_bits,
+    }
+  }
+
+  #[inline]
+  fn mask(self, bits: u32) -> Self {
+    self & (Self::MAX >> (Self::BITS - bits))
+  }
+
+  
+  /// If left direction, reads left most bit
+  /// If right direction, reads right most bit
+  #[inline]
+  fn read_bit(self, direction: Direction, num_bits: u32) -> bool {
+    let bit = match direction {
+      Direction::Left => self >> (num_bits - 1),
+      Direction::Right => self,
+    };
+    bit & 1 == 1
   }
   
-  /// Read current out_bit
+  /// If left direction, reads left most nibble
+  /// If right direction, reads right most nibble
   #[inline]
-  pub fn read_serial_without_shift(&self) -> bool {
-    self.out_bit
+  fn read_nibble(self, direction: Direction, num_bits: u32) -> u4 {
+    let bit = match direction {
+      Direction::Left => self >> (num_bits - 4),
+      Direction::Right => self,
+    };
+    u4::new(bit & 0xF)
+  }
+}
+
+/// Implement the BitOperations trait for u16
+impl BitOperations for u16 {
+  /// If left direction, writes right most bit
+  /// If right direction, writes left most bit
+  #[inline]
+  fn shift_with_bit(self, direction: Direction, num_bits: u32, bit: bool) -> Self {
+    let shifted = match direction {
+      Direction::Left => { let num = self << 1; num.mask(num_bits) },
+      Direction::Right => self >> 1,
+    };
+    let num = match direction {
+      Direction::Left => 1,
+      Direction::Right => 1 << num_bits,
+    };
+    if bit {
+      shifted | num
+    } else {
+      shifted & !num
+    }
+  }
+
+  #[inline]
+  fn mask(self, bits: u32) -> Self {
+    self & (Self::MAX >> (Self::BITS - bits))
+  }
+
+  /// If left direction, writes right most nibble
+  /// If right direction, writes left most nibble
+  #[inline]
+  fn shift_with_nibble(self, direction: Direction, num_bits: u32, nibble: u4) -> Self {
+    let shifted = match direction {
+      Direction::Left => { let num = self << 4; num.mask(num_bits) },
+      Direction::Right => self >> 4,
+    };
+    shifted | match direction {
+      Direction::Left => nibble.value(),
+      Direction::Right => nibble.value() << num_bits,
+    } as Self
+  }
+  
+  /// If left direction, reads left most bit
+  /// If right direction, reads right most bit
+  #[inline]
+  fn read_bit(self, direction: Direction, num_bits: u32) -> bool {
+    let num = match direction {
+      Direction::Left => self >> (num_bits - 1),
+      Direction::Right => self,
+    };
+    num & 1 == 1
+  }
+  
+  /// If left direction, reads left most nibble
+  /// If right direction, reads right most nibble
+  #[inline]
+  fn read_nibble(self, direction: Direction, num_bits: u32) -> u4 {
+    let bit = match direction {
+      Direction::Left => self >> (num_bits - 4),
+      Direction::Right => self,
+    };
+    u4::new(bit as u8 & 0xF)
+  }
+}
+
+
+/// Implement the BitOperations trait for u64
+impl BitOperations for u64 {
+  /// If left direction, writes right most bit
+  /// If right direction, writes left most bit
+  #[inline]
+  fn shift_with_bit(self, direction: Direction, num_bits: u32, bit: bool) -> Self {
+    let shifted = match direction {
+      Direction::Left => { let num = self << 1; num.mask(num_bits) },
+      Direction::Right => self >> 1,
+    };
+    let num = match direction {
+      Direction::Left => 1,
+      Direction::Right => 1 << num_bits,
+    };
+    if bit {
+      shifted | num
+    } else {
+      shifted & !num
+    }
+  }
+
+  #[inline]
+  fn mask(self, bits: u32) -> Self {
+    self & (Self::MAX >> (Self::BITS - bits))
+  }
+
+  /// If left direction, writes right most nibble
+  /// If right direction, writes left most nibble
+  #[inline]
+  fn shift_with_nibble(self, direction: Direction, num_bits: u32, nibble: u4) -> Self {
+    let shifted = match direction {
+      Direction::Left => { let num = self << 4; num.mask(num_bits) },
+      Direction::Right => self >> 4,
+    };
+    shifted | match direction {
+      Direction::Left => nibble.value() as Self,
+      Direction::Right => (nibble.value() as Self) << (num_bits - 4),
+    }
+  }
+  
+  /// If left direction, reads left most bit
+  /// If right direction, reads right most bit
+  #[inline]
+  fn read_bit(self, direction: Direction, num_bits: u32) -> bool {
+    let num = match direction {
+      Direction::Left => self >> (num_bits - 1),
+      Direction::Right => self,
+    };
+    num & 1 == 1
+  }
+  
+  /// If left direction, reads left most nibble
+  /// If right direction, reads right most nibble
+  #[inline]
+  fn read_nibble(self, direction: Direction, num_bits: u32) -> u4 {
+    let bit = match direction {
+      Direction::Left => self >> (num_bits - 4),
+      Direction::Right => self,
+    };
+    u4::new(bit as u8 & 0xF)
   }
 }

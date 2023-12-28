@@ -13,7 +13,7 @@
 //! * <https://archived.hpcalc.org/laporte/HP%2035%20Saga.htm>
 //! * <https://patentimages.storage.googleapis.com/44/5c/ab/197897f4ecaacb/US4001569.pdf>
 use arbitrary_int::{u4, u6, u10, u14};
-use log::trace;
+use log::{trace, info};
 
 /// HP 1820-0849 Control and Timing (C&T) chip
 #[derive(Default)]
@@ -35,6 +35,7 @@ pub struct HP_CnT {
 impl HP_CnT {
   /// Initialize with defaults
   pub fn new() -> Self {
+    //wasm_log::init(wasm_log::Config::new(log::Level::Debug));
     Default::default()
   }
   
@@ -65,6 +66,10 @@ impl HP_CnT {
 
   /// Returns word_select_data
   pub fn run_cycle(&mut self, opcode: u10, mut carry: bool, key_addr: Option<u6>) -> u14 {
+    /*self.timer += 1;
+    if self.timer == 100 {
+      panic!("done");
+    }*/
     self.next_address += 1;
     carry &= self.carry;  //Merge together carry signal from C&T and A&R.
     self.carry = true;  //Future carry
@@ -89,7 +94,7 @@ impl HP_CnT {
         let word_select_data = if opcode.value() & 0b11100 == 0b00000 {
           1 << self.pointer.value() //3 => 0b1000
         } else if opcode.value() & 0b11100 == 0b10000 {
-          (1 << (self.pointer.value() + 1)) - 1 //3 = 0b1111
+          (1 << (self.pointer.value() + 1)) - 1 //3 => 0b1111
         } else {
           0
         };
@@ -140,10 +145,12 @@ impl HP_CnT {
                   todo!("External Entry");
                 }
               },
-              _ => unimplemented!("Unknown opcode: {:#b}", byte_opcode),
+              0b11100 => {  //Auxilary Data Storage (RAM)
+              },
+              _ => unimplemented!("Unknown opcode: {:#b}00", byte_opcode),
             }
           },
-          _ => unimplemented!("Unknown opcode: {:#b}", byte_opcode),
+          _ => unimplemented!("Unknown opcode: {:#b}00", byte_opcode),
         }
         u14::new(0)
       },
