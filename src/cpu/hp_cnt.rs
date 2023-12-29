@@ -29,7 +29,9 @@ pub struct HP_CnT {
   pub pointer: u4,
   /// Carry - Can we jump?
   carry: bool,
-  timer: usize,
+    
+  pub current_keypress: Option<u6>,
+  //timer: usize,
 }
 
 impl HP_CnT {
@@ -65,16 +67,19 @@ impl HP_CnT {
   }
 
   /// Returns word_select_data
-  pub fn run_cycle(&mut self, opcode: u10, mut carry: bool, key_addr: Option<u6>) -> u14 {
-    /*self.timer += 1;
-    if self.timer == 100 {
-      panic!("done");
+  pub fn run_cycle(&mut self, opcode: u10, mut carry: bool) -> u14 {
+    /*trace!("{:010b}", opcode);
+    if self.timer > 0 {
+      self.timer -= 1;
+      if self.timer == 0 {
+        panic!("done");
+      }
     }*/
     self.next_address += 1;
     carry &= self.carry;  //Merge together carry signal from C&T and A&R.
     self.carry = true;  //Future carry
     let byte_opcode = (opcode.value() >> 2) as u8;
-    trace!("{:010b}", opcode);
+
     match opcode.value() & 0b11 {
       //Type 1
       0b11 => {
@@ -102,14 +107,21 @@ impl HP_CnT {
       },
       _ => {
         let value = byte_opcode >> 4;
-        self.status[0] = key_addr.is_some();  //The only status flag connected to hardware. (Set with key press).
+        
+        if let Some(n) = self.current_keypress {
+          /*if self.timer == 0 && n == u6::new(56) {
+            wasm_log::init(wasm_log::Config::new(log::Level::Trace));
+            self.timer = 200;
+          }*/
+        }
+        
         match byte_opcode & 0b1111 {
           //Type 10 - NOP
           0b0000 => trace!("NOP"),
           
           //Type 3 - Status
           0b0001 => { trace!("S{} = true", value); self.status[value as usize] = true; },
-          0b0101 => { trace!("? S{} == false", value); self.carry = !self.status[value as usize]; }, //Note carries are always recorded as opposites.
+          0b0101 => { trace!("? S{} != true", value); self.carry = !self.status[value as usize]; },
           0b1001 => { trace!("S{} = false", value); self.status[value as usize] = false; },
           0b1101 => { trace!("S = false"); for i in 0..12 { self.status[i] = false; } },
           
@@ -139,8 +151,10 @@ impl HP_CnT {
               0b10100 => {
                 if byte_opcode >> 5 == 1 {
                   //Key -> ROM Address
-                  self.next_address = if let Some(key_code) = key_addr { key_code.value() } else { 0 };
-                  trace!("Key ({:03o}) -> Address", self.next_address);
+                  self.next_address = if let Some(key_code) = self.current_keypress { key_code.value() } else { 0 };
+                  self.current_keypress = None;
+
+                  info!("Key ({:03o}) -> Address", self.next_address);
                 } else {
                   todo!("External Entry");
                 }

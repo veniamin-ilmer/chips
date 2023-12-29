@@ -229,13 +229,13 @@ impl HP_AnR {
       },
       0b10 | 0b11 => {
         match instruction.value() >> 2 {
-          0b0000 => { info!("Display Toggle"); self.display_on = !self.display_on; },
+          0b0000 => { trace!("Display Toggle"); self.display_on = !self.display_on; },
           0b0010 => { trace!("XHG C, M"); (self.c, self.m) = (self.m, self.c) },      //Exchange Memory
           0b0100 => { trace!("PUSH C"); (self.d, self.e, self.f) = (self.c, self.d, self.e); }  //Up Stack
           0b0110 => { trace!("POP A"); (self.e, self.d, self.a) = (self.f, self.e, self.d); }   //Down Stack
-          0b1000 => { info!("Display off"); self.display_on = false; },
+          0b1000 => { trace!("Display off"); self.display_on = false; },
           0b1010 => { trace!("MOV C, M"); self.c = self.m; }  //Recall memory
-          0b1011 => { info!("C = Data Storage ({:014X})", ram_data.read_parallel()); self.c = ram_data; }, //Send Data from Auxiliary Data Storage Circuit into C Register
+          0b1011 => { trace!("C = Data Storage ({:014X})", ram_data.read_parallel()); self.c = ram_data; }, //Send Data from Auxiliary Data Storage Circuit into C Register
           0b1100 => { trace!("Rotate C"); (self.f, self.e, self.d, self.c) = (self.c, self.f, self.e, self.d); }  //Rotate Down
           0b1110 => { trace!("CLEAR REGS"); *self = HP_AnR::new(); },
           _ => unimplemented!(),
