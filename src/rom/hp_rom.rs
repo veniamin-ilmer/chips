@@ -4,6 +4,7 @@
 //! The C&R would tell it which position to read.
 
 use arbitrary_int::{u3, u10, u14};
+use log::trace;
 
 /// HP ROM chip
 #[allow(non_camel_case_types)]
@@ -14,6 +15,8 @@ pub struct HP_ROM {
   who_am_i: u3,
   /// ROM Output Enable (ROE) gets set based on the ROM select opcode.
   output_enable: bool,
+  /// DELAYED ROM Output Enable, sets the output_enable on the next cycle.
+  delayed_output_enable: Option<bool>
 }
 
 impl HP_ROM {
@@ -24,6 +27,7 @@ impl HP_ROM {
       packed_data,
       who_am_i,
       output_enable: who_am_i == u3::new(0),  //Initially only ROM 0 is enabled.
+      delayed_output_enable: None,
     }
   }
   
@@ -31,7 +35,7 @@ impl HP_ROM {
   /// Returns the opcode and the Word Select.
   #[inline]
   pub fn read(&mut self, addr: u8) -> (u10, u14) {
-    if self.output_enable {
+    let result = if self.output_enable {
       let opcode = self.unpack_data(addr);
       let word_select = match opcode.value() & 0b11111 { //0bxxx10 = Type 2. Generate the word select
         //From FIG 9 of the patent. Note that the codes are reversed.
@@ -46,7 +50,15 @@ impl HP_ROM {
       (opcode, u14::new(word_select))
     } else {  //output disabled.
       (u10::new(0), u14::new(0))
+    };
+    
+    //Read the delayed output enable, only after reading above.
+    if let Some(output_enable) = self.delayed_output_enable {
+      self.output_enable = output_enable;
+      self.delayed_output_enable = None;
     }
+    
+    result
   }
 
   fn unpack_data(&self, index: u8) -> u10 {
@@ -73,9 +85,33 @@ impl HP_ROM {
     u10::new(value)
   }
 
-  //From the ROM Select instruction
-  pub fn select_rom(&mut self, rom_num: u3) {
-    self.output_enable = self.who_am_i == rom_num;
+  //ROM Select decoder
+  pub fn decode(&mut self, opcode: u10) {
+    let rom_num = (opcode.value() >> 7) as u8;
+    match opcode.value() & 0b1111111 {
+      0b0010000 => { //ROM SELECT
+        if self.who_am_i.value() == rom_num {
+          trace!("SELECT ROM {}", rom_num);
+          self.output_enable = true;
+        } else {
+          self.output_enable = false;
+        }
+      },
+      0b0110100 => {
+        if opcode.value() >> 9 == 1 {
+          trace!("DELAYED ROM GROUP {}", rom_num & 0b11);
+          todo!();
+        }
+      },
+      0b1110100 => {
+        if self.who_am_i.value() == rom_num {
+          trace!("DELAYED SELECT ROM {}", rom_num);
+          self.delayed_output_enable = Some(true);
+        } else {
+          self.delayed_output_enable = Some(false);
+        }
+      }
+      _ => (),
+    }
   }
-
 }

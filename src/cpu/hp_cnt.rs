@@ -38,6 +38,7 @@ impl HP_CnT {
   /// Initialize with defaults
   pub fn new() -> Self {
     //wasm_log::init(wasm_log::Config::new(log::Level::Debug));
+    //wasm_log::init(wasm_log::Config::new(log::Level::Trace));
     Default::default()
   }
   
@@ -74,6 +75,8 @@ impl HP_CnT {
       if self.timer == 0 {
         panic!("done");
       }
+    } else {
+      //self.timer = 200;
     }
     self.next_address += 1;
     carry &= self.carry;  //Merge together carry signal from C&T and A&R.
@@ -123,7 +126,13 @@ impl HP_CnT {
           0b0001 => { trace!("S{} = true", value); self.status[value as usize] = true; },
           0b0101 => { trace!("? S{} != true", value); self.carry = !self.status[value as usize]; },
           0b1001 => { trace!("S{} = false", value); self.status[value as usize] = false; },
-          0b1101 => { trace!("S = false"); for i in 0..12 { self.status[i] = false; } },
+          0b1101 => {
+             //Starting HP-55 or HP-65, this opcode was modified to add in "delayed select rom". It only clears status if the value is 0.
+            if value == 0 {
+              trace!("CLEAR STATUSES");
+              for i in 0..12 { self.status[i] = false; }
+            }
+          },
           
           //Type 4 - Pointer
           0b0011 => { trace!("P = ${:X}", value); self.pointer = u4::new(value); },

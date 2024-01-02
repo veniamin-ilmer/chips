@@ -10,7 +10,7 @@ bitbybit = "1.2.2"
 arbitrary-int = { version="1.2.6", features=["num-traits"] }
 num-traits = { version="0.2.17", default-features = false }
 log = "0.4.20"
-#wasm-log = "0.3"
+wasm-log = "0.3"
 
 [dev-dependencies]
 simplelog = "0.12.1"
