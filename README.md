@@ -34,3 +34,7 @@ All chips were built to communicate with via calling IO trait functions. In orde
 * Fairchild 3850 CPU
 * Fairchild 3851 PSU (ROM)
 * Fairchild 3852 DMI (RAM)
+* HP Arithmetic & Register CPU
+* HP Control & Timing CPU
+* HP ROM
+* HP RAM
