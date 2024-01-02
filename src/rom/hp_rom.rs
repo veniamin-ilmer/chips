@@ -85,7 +85,7 @@ impl HP_ROM {
     u10::new(value)
   }
 
-  //ROM Select decoder
+  /// ROM Select decoder
   pub fn decode(&mut self, opcode: u10) {
     let rom_num = (opcode.value() >> 7) as u8;
     match opcode.value() & 0b1111111 {

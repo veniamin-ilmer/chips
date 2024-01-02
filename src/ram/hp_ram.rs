@@ -1,6 +1,7 @@
 //! The Auxilary Data Storage, is the RAM, first used by the HP-45.
 
 use crate::shifter;
+/// Same Register as on the A&R
 pub type Register = shifter::Shifter<u64, 56>;
 
 use arbitrary_int::{
@@ -13,6 +14,7 @@ use log::trace;
 #[allow(non_camel_case_types)]
 pub struct HP_RAM<const REG_COUNT: usize> {
   addr: u8,
+  /// All of the Registers
   pub regs: [Register; REG_COUNT],
 }
 
@@ -31,6 +33,8 @@ impl<const REG_COUNT: usize> HP_RAM<REG_COUNT> {
     Default::default()
   }
 
+  /// With the right opcode, c could be copied into this memory.
+  /// Returns the current register's value.
   pub fn run_cycle(&mut self, opcode: u10, mut c: Register) -> Register {
     if REG_COUNT == 0 {
       return Default::default();

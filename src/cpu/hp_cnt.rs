@@ -29,7 +29,7 @@ pub struct HP_CnT {
   pub pointer: u4,
   /// Carry - Can we jump?
   carry: bool,
-    
+  /// Current Keypress, set by the keyboard, then read by this chip.
   pub current_keypress: Option<u6>,
   timer: usize,
 }
