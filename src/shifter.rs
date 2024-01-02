@@ -27,8 +27,8 @@ pub type S74X166 = Shifter<u8, 8>;
 /// use chips::Shifter;
 ///
 /// let mut shifter: Shifter<10> = Shifter::new();
-/// shifter.read_write_serial(false, true);
-/// shifter.read_write_serial(true, true);
+/// shifter.read_write_serial(Direction::Left, true, false);
+/// shifter.read_write_serial(Direction::Left, true, true);
 /// ```
 #[derive(Default, Clone, Copy, PartialEq)]
 pub struct Shifter<T: BitOperations, const NUM_BITS: u32> {
@@ -95,17 +95,38 @@ impl<T: BitOperations, const NUM_BITS: u32> Shifter<T, NUM_BITS> {
   }
 }
 
+/// Shifting direction
 #[derive(Debug, Clone, Copy)]
 pub enum Direction {
+  /// Shift left. Also, read from the left, but write from the right.
   Left,
+  /// Shift right. Also, read from the left, but write from the left.
   Right,
 }
 
 pub trait BitOperations: Default + Copy {
+  
+  
   fn mask(self, num_bits: u32) -> Self;
+  
+  /// Read a bit
+  /// If left direction, reads left most bit
+  /// If right direction, reads right most bit
   fn read_bit(self, direction: Direction, num_bits: u32) -> bool;
+  
+  /// Read a nibble
+  /// If left direction, reads left most nibble
+  /// If right direction, reads right most nibble
   fn read_nibble(self, direction: Direction, num_bits: u32) -> u4;
+  
+  /// Shift and write a bit
+  /// If left direction, writes right most bit
+  /// If right direction, writes left most bit
   fn shift_with_bit(self, direction: Direction, num_bits: u32, bit: bool) -> Self;
+  
+  /// Shift and write a nibble
+  /// If left direction, reads left most nibble
+  /// If right direction, reads right most nibble
   fn shift_with_nibble(self, direction: Direction, num_bits: u32, nibble: u4) -> Self;
 }
 

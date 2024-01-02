@@ -31,7 +31,7 @@ pub struct HP_CnT {
   carry: bool,
     
   pub current_keypress: Option<u6>,
-  //timer: usize,
+  timer: usize,
 }
 
 impl HP_CnT {
@@ -68,13 +68,13 @@ impl HP_CnT {
 
   /// Returns word_select_data
   pub fn run_cycle(&mut self, opcode: u10, mut carry: bool) -> u14 {
-    /*trace!("{:010b}", opcode);
+    trace!("{:010b}", opcode);
     if self.timer > 0 {
       self.timer -= 1;
       if self.timer == 0 {
         panic!("done");
       }
-    }*/
+    }
     self.next_address += 1;
     carry &= self.carry;  //Merge together carry signal from C&T and A&R.
     self.carry = true;  //Future carry
@@ -108,12 +108,12 @@ impl HP_CnT {
       _ => {
         let value = byte_opcode >> 4;
         
-        if let Some(n) = self.current_keypress {
-          /*if self.timer == 0 && n == u6::new(56) {
+        /*if let Some(n) = self.current_keypress {
+          if self.timer == 0 && n == u6::new(56) {
             wasm_log::init(wasm_log::Config::new(log::Level::Trace));
             self.timer = 200;
-          }*/
-        }
+          }
+        }*/
         
         match byte_opcode & 0b1111 {
           //Type 10 - NOP
@@ -152,7 +152,13 @@ impl HP_CnT {
                 if byte_opcode >> 5 == 1 {
                   //Key -> ROM Address
                   self.next_address = if let Some(key_code) = self.current_keypress { key_code.value() } else { 0 };
-                  self.current_keypress = None;
+                  
+                  /*if self.next_address == 24 {
+                    wasm_log::init(wasm_log::Config::new(log::Level::Trace));
+                    self.timer = 100;
+                  }*/
+                  
+                  //self.current_keypress = None;
 
                   info!("Key ({:03o}) -> Address", self.next_address);
                 } else {

@@ -2,7 +2,7 @@
 
 mod i4002; pub use i4002::I4002;
 mod f3852; pub use f3852::F3852;
-mod hp_ram; pub use hp_ram::HP_RAM;
+pub mod hp_ram; pub use hp_ram::HP_RAM;
 
 /// Intel 2107B is a 512 byte RAM.
 pub type I2107B = RAM<0x200>;
