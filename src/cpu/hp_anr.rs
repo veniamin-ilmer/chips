@@ -16,7 +16,7 @@ use log::{info,trace};
 use crate::shifter;
 
 /// Each of A&R's shift registers consisted of 14 nibbles (56 bits).
-pub type Register = shifter::Shifter<u64, 56>;
+pub type Register = shifter::Shifter64<56>;
 
 use arbitrary_int::{
   u4,   //Register nibbles

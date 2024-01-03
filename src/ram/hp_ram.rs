@@ -2,7 +2,7 @@
 
 use crate::shifter;
 /// Same Register as on the A&R
-pub type Register = shifter::Shifter<u64, 56>;
+pub type Register = shifter::Shifter64<56>;
 
 use arbitrary_int::{
   u4,   //Address

@@ -21,7 +21,7 @@ pub mod or; pub use or::OR;
 pub mod nand; pub use nand::NAND;
 pub mod decoder; pub use decoder::SegmentDecoder;
 pub mod counter; pub use counter::Counter;
-pub mod shifter; pub use shifter::Shifter;
+pub mod shifter; pub use shifter::{Shifter64};
 pub mod rom; pub use rom::ROM;
 pub mod ram; pub use ram::RAM;
 pub mod cpu;
