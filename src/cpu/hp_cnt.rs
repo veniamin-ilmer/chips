@@ -14,6 +14,7 @@
 //! * <https://patentimages.storage.googleapis.com/44/5c/ab/197897f4ecaacb/US4001569.pdf>
 use arbitrary_int::{u4, u6, u10, u14};
 use log::{trace, info};
+use crate::Indexer16;
 
 /// HP 1820-0849 Control and Timing (C&T) chip
 #[derive(Default)]
@@ -24,7 +25,7 @@ pub struct HP_CnT {
   /// Saved Program Counter for call/return
   pub saved_address: u8,
   /// Status flags. Note that The only status flag connected to hardware is 0, which is set with key press.
-  pub status: [bool; 12],
+  pub status: Indexer16,
   /// Pointer
   pub pointer: u4,
   /// Carry - Can we jump?
@@ -123,14 +124,14 @@ impl HP_CnT {
           0b0000 => trace!("NOP"),
           
           //Type 3 - Status
-          0b0001 => { trace!("S{} = true", value); self.status[value as usize] = true; },
-          0b0101 => { trace!("? S{} != true", value); self.carry = !self.status[value as usize]; },
-          0b1001 => { trace!("S{} = false", value); self.status[value as usize] = false; },
+          0b0001 => { trace!("S{} = true", value); self.status.write_bit(value, true); },
+          0b0101 => { trace!("? S{} != true", value); self.carry = !self.status.read_bit(value); },
+          0b1001 => { trace!("S{} = false", value); self.status.write_bit(value, false); },
           0b1101 => {
              //Starting HP-55 or HP-65, this opcode was modified to add in "delayed select rom". It only clears status if the value is 0.
             if value == 0 {
               trace!("CLEAR STATUSES");
-              for i in 0..12 { self.status[i] = false; }
+              self.status.data = 0;
             }
           },
           

@@ -25,7 +25,8 @@ pub mod shifter; pub use shifter::Shifter;
 pub mod rom; pub use rom::ROM;
 pub mod ram; pub use ram::RAM;
 pub mod cpu;
-pub mod memory_pointer; pub use memory_pointer::MemoryPointer;
+//pub mod memory_pointer; pub use memory_pointer::MemoryPointer;
+pub mod indexer; pub use indexer::{Indexer16, Indexer64};
 
 /// Generic ROM / RAM read operations
 pub trait ReadArr {

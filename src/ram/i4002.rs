@@ -3,11 +3,12 @@
 
 use log::warn;
 use arbitrary_int::{u2, u4};
+use crate::{Indexer16, Indexer64};
 
 #[derive(Default)]
 struct Register {
-  characters: [u4; 16], //The default RAM implementation is limited to u8, and splitting it up into u4 is painful, so I will just keep this as an array here.
-  status: [u4; 4], //4 nibbles = 2 bytes
+  characters: Indexer64,  //16 nibbles = 8 bytes
+  status: Indexer16, //4 nibbles = 2 bytes
 }
 
 /// Intel 4002 chip
@@ -28,7 +29,7 @@ impl I4002 {
   #[inline]
   pub fn read_character(&self, reg_index: u2, character_index: u4) -> u4 {
     if let Some(register) = self.registers.get(reg_index.value() as usize) {
-      register.characters[character_index.value() as usize]
+      register.characters.read_nibble(character_index.value())
     } else {
       warn!("Register index too big: {}", reg_index);
       Default::default()
@@ -39,7 +40,7 @@ impl I4002 {
   #[inline]
   pub fn write_character(&mut self, reg_index: u2, character_index: u4, val: u4) {
     if let Some(register) = self.registers.get_mut(reg_index.value() as usize) {
-      register.characters[character_index.value() as usize] = val;
+      register.characters.write_nibble(character_index.value(), val);
     } else {
       warn!("Register index too big: {}", reg_index);
     }
@@ -49,7 +50,7 @@ impl I4002 {
   #[inline]
   pub fn read_status(&self, reg_index: u2, status_index: u2) -> u4 {
     if let Some(register) = self.registers.get(reg_index.value() as usize) {
-      register.status[status_index.value() as usize]
+      register.status.read_nibble(status_index.value())
     } else {
       warn!("Register index too big: {}", reg_index);
       Default::default()
@@ -60,7 +61,7 @@ impl I4002 {
   #[inline]
   pub fn write_status(&mut self, reg_index: u2, status_index: u2, val: u4) {
     if let Some(register) = self.registers.get_mut(reg_index.value() as usize) {
-      register.status[status_index.value() as usize] = val;
+      register.status.write_nibble(status_index.value(), val);
     } else {
       warn!("Register index too big: {}", reg_index);
     }
@@ -80,7 +81,7 @@ impl I4002 {
   
   /// Read all character memory in a register
   #[inline]
-  pub fn read_character_array(&self, reg_index: u2) -> [u4; 16] {
+  pub fn read_full_character(&self, reg_index: u2) -> Indexer64 {
     if let Some(register) = self.registers.get(reg_index.value() as usize) {
       register.characters
     } else {
@@ -91,7 +92,7 @@ impl I4002 {
   
   /// Read all status memory in a register
   #[inline]
-  pub fn read_status_array(&self, reg_index: u2) -> [u4; 4] {
+  pub fn read_full_status(&self, reg_index: u2) -> Indexer16 {
     if let Some(register) = self.registers.get(reg_index.value() as usize) {
       register.status
     } else {

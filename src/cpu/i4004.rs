@@ -12,6 +12,7 @@
 
 use bitbybit::bitfield;
 use arbitrary_int::{u2,u4};
+use crate::Indexer64;
 
 use log::{trace,debug};
 
@@ -65,14 +66,14 @@ pub struct ROMAddress {
 }
 
 struct PairOp {
-  high: usize,
-  low: usize,
+  high: u8,
+  low: u8,
 }
 
 /// Intel 4004 chip
 #[derive(Default)]
 pub struct I4004 {
-  regs: [u4; 16],
+  regs: Indexer64,
   carry: bool,
   test: bool,
   acc: u4,
@@ -92,13 +93,12 @@ impl I4004 {
     Default::default()
   }
 
-  fn get_reg(&mut self, opcode: u8) -> usize {
-    let index = opcode & 0xF;
-    index as usize
+  fn get_reg(&mut self, opcode: u8) -> u8 {
+    opcode & 0xF
   }
 
   fn get_reg_pair(&mut self, opcode: u8) -> PairOp {
-    let index = ((opcode >> 1) & 0b111) as usize;
+    let index = (opcode >> 1) & 0b111;
     PairOp {
       high: index * 2,
       low: index * 2 + 1,
@@ -117,8 +117,8 @@ impl I4004 {
   
   /// Print debug data of all registers
   pub fn print(&self) {
-    debug!("R0: {:X} R1: {:X} R2: {:X} R3: {:X} R4: {:X} R5: {:X} R6: {:X} R7: {:X}", self.regs[0].value(), self.regs[1].value(), self.regs[2].value(), self.regs[3].value(), self.regs[4].value(), self.regs[5].value(), self.regs[6].value(), self.regs[7].value());
-    debug!("R8: {:X} R9: {:X} RA: {:X} RB: {:X} RC: {:X} RD: {:X} RE: {:X} RF: {:X}", self.regs[8].value(), self.regs[9].value(), self.regs[10].value(), self.regs[11].value(), self.regs[12].value(), self.regs[13].value(), self.regs[14].value(), self.regs[15].value());
+    debug!("R0: {:X} R1: {:X} R2: {:X} R3: {:X} R4: {:X} R5: {:X} R6: {:X} R7: {:X}", self.regs.read_nibble(0).value(), self.regs.read_nibble(1).value(), self.regs.read_nibble(2).value(), self.regs.read_nibble(3).value(), self.regs.read_nibble(4).value(), self.regs.read_nibble(5).value(), self.regs.read_nibble(6).value(), self.regs.read_nibble(7).value());
+    debug!("R8: {:X} R9: {:X} RA: {:X} RB: {:X} RC: {:X} RD: {:X} RE: {:X} RF: {:X}", self.regs.read_nibble(8).value(), self.regs.read_nibble(9).value(), self.regs.read_nibble(10).value(), self.regs.read_nibble(11).value(), self.regs.read_nibble(12).value(), self.regs.read_nibble(13).value(), self.regs.read_nibble(14).value(), self.regs.read_nibble(15).value());
     debug!("PC: {:X} Acc: {:X} Carry: {} Test: {} Designated Index: {} {} {}", self.pc.raw_value(), self.acc.value(), self.carry, self.test, self.designated_index.chip_index(), self.designated_index.reg_index(), self.designated_index.char_index());
   }
   
@@ -169,31 +169,31 @@ impl I4004 {
         let pair = self.get_reg_pair(opcode);
         if opcode & 1 == 0 {  //FIM
           let opcode_low = self.next_rom_byte(io);
-          self.regs[pair.low] = u4::new(opcode_low & 0xf);
-          self.regs[pair.high] = u4::new(opcode_low >> 4);
-          trace!("FIM R{:X} = {:X}, R{:X} = {:X} - Fetch Immediate", pair.high, self.regs[pair.high].value(), pair.low, self.regs[pair.low].value());
+          self.regs.write_nibble(pair.low, u4::new(opcode_low & 0xf));
+          self.regs.write_nibble(pair.high, u4::new(opcode_low >> 4));
+          trace!("FIM R{:X} = {:X}, R{:X} = {:X} - Fetch Immediate", pair.high, self.regs.read_nibble(pair.high).value(), pair.low, self.regs.read_nibble(pair.low).value());
         } else { //SRC
           trace!("SRC R{:X} R{:X} - Send Register Control - set designated index", pair.low, pair.high);
           self.designated_index = DesignatedIndex::DEFAULT
-                                   .with_char_index(self.regs[pair.low])
-                                   .with_reg_index(u2::new(self.regs[pair.high].value() & 0b11))
-                                   .with_chip_index(u2::new(self.regs[pair.high].value() >> 2));
+                                   .with_char_index(self.regs.read_nibble(pair.low))
+                                   .with_reg_index(u2::new(self.regs.read_nibble(pair.high).value() & 0b11))
+                                   .with_chip_index(u2::new(self.regs.read_nibble(pair.high).value() >> 2));
         }
       },
       0x30..=0x3f => {
         if opcode & 1 == 0 { //FIN
-          let addr = self.regs[1].value() | (self.regs[0].value() << 4);
+          let addr = self.regs.read_nibble(1).value() | (self.regs.read_nibble(0).value() << 4);
           let full_addr = ROMAddress::DEFAULT.with_chip_index(self.pc.chip_index())
                                              .with_offset(addr);
           let opcode_low = io.read_rom_byte(full_addr);
           let pair = self.get_reg_pair(opcode);
-          self.regs[pair.low] = u4::new(opcode_low & 0xf);
-          self.regs[pair.high] = u4::new(opcode_low >> 4);
+          self.regs.write_nibble(pair.low, u4::new(opcode_low & 0xf));
+          self.regs.write_nibble(pair.high, u4::new(opcode_low >> 4));
           trace!("FIN R{:X} R{:X} - Fetch Indirect", pair.low, pair.high);
         } else {  //JIN
           let pair = self.get_reg_pair(opcode);
           trace!("JIN R{:X} R{:X} - Jump Indirect", pair.low, pair.high);
-          self.jump_near(self.regs[pair.low].value() | self.regs[pair.high].value() << 4);
+          self.jump_near(self.regs.read_nibble(pair.low).value() | self.regs.read_nibble(pair.high).value() << 4);
         }
       },
       0x40..=0x4f => { trace!("JUN - Unconditional Jump");
@@ -212,19 +212,19 @@ impl I4004 {
       0x60..=0x6f => {
         let reg_op = self.get_reg(opcode);
         trace!("INC R{:X} - Increment", reg_op);
-        let val = self.regs[reg_op].value();
-        self.regs[reg_op] = u4::new((val + 1) & 0xF);
+        let val = self.regs.read_nibble(reg_op).value();
+        self.regs.write_nibble(reg_op, u4::new((val + 1) & 0xF));
         //No flags are set.
       },
       0x70..=0x7f => {
         let reg_op = self.get_reg(opcode);
         let opcode_low = self.next_rom_byte(io);
         trace!("ISZ R{:X} - Jump to {:X} - Increment and Skip (Loop until wrapped to 0)", reg_op, opcode_low);
-        let val = self.regs[reg_op].value();
+        let val = self.regs.read_nibble(reg_op).value();
         match val {
-          0xF => self.regs[reg_op] = u4::new(0),
+          0xF => self.regs.write_nibble(reg_op, u4::new(0)),
           _ => {
-            self.regs[reg_op] = u4::new(val + 1);
+            self.regs.write_nibble(reg_op, u4::new(val + 1));
             self.jump_near(opcode_low);
           },
         };
@@ -233,22 +233,24 @@ impl I4004 {
         let reg_op = self.get_reg(opcode);
         trace!("Acc + ADD R{:X} + Carry - Set Accumulator to value of register", reg_op);
         //First add the carry..
-        self.set_acc_carry(self.acc.value() + self.regs[reg_op].value() + self.carry as u8);
+        self.set_acc_carry(self.acc.value() + self.regs.read_nibble(reg_op).value() + self.carry as u8);
       },
       0x90..=0x9f => {
         let reg_op = self.get_reg(opcode);
         trace!("SUB Acc - R{:X} - Carry - Subtract index register from accumulator with borrow", reg_op);
-        self.set_acc_carry(self.acc.value() + (!self.regs[reg_op]).value() + (!self.carry) as u8);
+        self.set_acc_carry(self.acc.value() + (!self.regs.read_nibble(reg_op)).value() + (!self.carry) as u8);
       },
       0xa0..=0xaf => {
         let reg_op = self.get_reg(opcode);
         trace!("LD Acc, R{:X} - Set Accumulator to value of register", reg_op);
-        self.acc = self.regs[reg_op];
+        self.acc = self.regs.read_nibble(reg_op);
       },
       0xb0..=0xbf => {
         let reg_op = self.get_reg(opcode);
         trace!("XCH R{:X} - Exchange register with accumulator", reg_op);
-        core::mem::swap(&mut self.acc, &mut self.regs[reg_op])
+        let nibble = self.regs.read_nibble(reg_op);
+        self.regs.write_nibble(reg_op, self.acc);
+        self.acc = nibble;
       },
       0xc0..=0xcf => {
         self.acc = u4::new(opcode & 0xF);
