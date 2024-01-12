@@ -38,3 +38,4 @@ All chips were built to communicate with via calling IO trait functions. In orde
 * HP Control & Timing CPU
 * HP ROM
 * HP RAM
+* TMS-0800
