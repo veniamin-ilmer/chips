@@ -1,0 +1,174 @@
+//! Handling all of the arthimetic of the TMS0100 series
+
+use log::{debug, trace};
+use arbitrary_int::{u4,u5};
+use crate::shifter;
+
+/// 11 nibbles of BCD digits
+pub type Register = shifter::Shifter64<44>;
+
+/// WordSelect, Mapped from the "mask".
+type WordSelect = shifter::Shifter16<11>;
+
+pub struct ALU {
+  pub a: Register,
+  pub b: Register,
+  c: Register,
+}
+
+impl ALU {
+  pub fn new() -> Self {
+    Self {
+      a: Register::new(0),
+      b: Register::new(0),
+      c: Register::new(0),
+    }
+  }
+  
+  /// Returns carry
+  pub fn run_cycle(&mut self, instruction: u5, mask: u4) -> Option<bool> {
+    let mut carry = None;
+    let mut word_select = mask_to_word_select(mask);
+    let mut constant = mask_to_constant(mask);
+    let direction = if matches!(instruction.value(), 0x17..=0x19) {
+      shifter::Direction::Left
+    } else {
+      shifter::Direction::Right
+    };
+    let mut prev_nibble = u4::new(0);
+    for i in 0..11 {
+      let mut a = self.a.read_nibble(direction);
+      let mut b = self.b.read_nibble(direction);
+      let mut c = self.c.read_nibble(direction);
+      let k = constant.read_nibble(direction);
+      if word_select.read_and_shift_bit(direction, false) {
+        match instruction.value() {
+          0x00 => { trace!("A{i} = A{i} + B{i}"); (a, carry) = add(a, b, carry); },
+          0x01 | 0x1A => { trace!("A{i} = A{i} + {k}"); (a, carry) = add(a, k, carry); },
+          0x02 => { trace!("C{i} = A{i} + {k}"); (c, carry) = add(a, k, carry); },
+          0x03 => { trace!("A{i} = B{i}"); a = b; },
+          0x04 => { trace!("C{i} = B{i}"); c = b; },
+          0x05 => { trace!("A{i} = C{i} + {k}"); (a, carry) = add(c, k, carry); },
+          0x06 => { trace!("B{i} = C{i} + {k}"); (b, carry) = add(c, k, carry); },
+          0x07 => { trace!("A{i} = A{i} - B{i}"); (a, carry) = sub(a, b, carry); },
+          0x08 => { trace!("C{i} = A{i} - B{i}"); (c, carry) = sub(a, b, carry); },
+          0x09 => { trace!("A{i} = A{i} - {k}"); (a, carry) = sub(a, k, carry); },
+          0x0A => { trace!("C{i} = C{i} - B{i}"); (c, carry) = sub(c, b, carry); },
+          0x0B => { trace!("C{i} = C{i} - {k}"); (c, carry) = sub(c, k, carry); },
+          0x0C => { trace!("? = A{i} - B{i}"); (_, carry) = sub(a, b, carry); },
+          0x0D => { trace!("? = A{i} - {k}"); (_, carry) = sub(a, k, carry); },
+          0x0E => { trace!("? = C{i} - B{i}"); (_, carry) = sub(c, b, carry); },
+          0x0F => { trace!("? = C{i} - {k}"); (_, carry) = sub(c, k, carry); },
+          0x10 => { trace!("A{i} = {k}"); a = k; },
+          0x11 => { trace!("B{i} = {k}"); b = k; },
+          0x12 => { trace!("C{i} = {k}"); c = k; },
+          0x13 => { trace!("XCHG A{i}, B{i}"); (a, b) = (b, a) },
+          0x14 => { trace!("A = A << 4"); (a, prev_nibble) = (prev_nibble, a); },
+          0x15 => { trace!("B = B << 4"); (b, prev_nibble) = (prev_nibble, b); },
+          0x16 => { trace!("C = C << 4"); (c, prev_nibble) = (prev_nibble, c); },
+          0x17 => { trace!("A = A >> 4"); (a, prev_nibble) = (prev_nibble, a); },
+          0x18 => { trace!("B = B >> 4"); (b, prev_nibble) = (prev_nibble, b); },
+          0x19 => { trace!("C = C >> 4"); (c, prev_nibble) = (prev_nibble, c); },
+          0x1B => { trace!("A{i} = A{i} + {k} (hex)"); (a, carry) = add_hex(a, k, carry); },
+          0x1C => { trace!("A{i} = A{i} - {k} (hex)"); (a, carry) = sub_hex(a, k, carry); },
+          0x1D => { trace!("C{i} = C{i} + {k}"); (c, carry) = add(c, k, carry); },
+          _ => unimplemented!("Unknown instruction: {:05b} mask: {:04b}", instruction.value(), mask.value()),
+        }
+      }
+      self.a.shift_with_nibble(direction, a);
+      self.b.shift_with_nibble(direction, b);
+      self.c.shift_with_nibble(direction, c);
+      constant.shift_with_nibble(direction, k);
+    }
+    debug!("A: {:011X} B: {:011X} C: {:011X}", self.a.read_parallel(), self.b.read_parallel(), self.c.read_parallel());
+    carry
+  }
+
+}
+
+fn mask_to_word_select(mask: u4) -> WordSelect {
+  WordSelect::new(match mask.value() {
+    0x0 => 0b00000000001, //F0/DPT7
+    0x1 => 0b00000000010, //F1/EXPD
+    0x2 => 0b00000000100, //F2/LSD1
+    0x3 => 0b00000001000, //F3
+    0x4 => 0b00000010000, //F4
+    0x5 => 0b00000100000, //F5
+    0x6 => 0b00001000000, //F6
+    0x7 => 0b01000000000, //F9
+    0x8 => 0b10000000000, //F10/0V1
+    0x9 => 0b00000000111, //OPFGS
+    0xA => 0b11000000000, //MSD1
+    0xB => 0b11111111100, //MANT1
+    0xC => 0b11111111100, //MANT
+    0xD => 0b00000000011, //EXP1
+    0xE => 0b00000000011, //EXP
+    _   => 0b11111111111, //ALL
+  })
+}
+
+fn mask_to_constant(mask: u4) -> Register {
+  Register::new(match mask.value() {
+    0x0 => 0x00000000007, //F0/DPT7
+    0x1 => 0x00000000040, //F1/EXPD
+    0x2 => 0x00000000100, //F2/LSD1
+    0x8 => 0x10000000000, //F10/0V1
+    0xA => 0x01000000000, //MSD1      <- The patent did not document this constant, but the code requires it....
+    0xB => 0x00000000100, //MANT1
+    0xD => 0x00000000001, //EXP1
+    _   => 0,
+  })
+}
+
+// BCD add
+fn add(num1: u4, num2: u4, carry: Option<bool>) -> (u4, Option<bool>) {
+  let mut result = num1.value() + num2.value();
+  if let Some(true) = carry {
+    result += 1;
+  }
+  if result >= 10 {
+    (u4::new(result - 10), Some(true))
+  } else {
+    (u4::new(result), Some(false))
+  }
+}
+
+//BCD subtract
+fn sub(num1: u4, num2: u4, borrow: Option<bool>) -> (u4, Option<bool>) {
+  let mut result = num1.value() as isize - num2.value() as isize;
+  if let Some(true) = borrow {
+    result -= 1;
+  }
+  if result < 0 {
+    (u4::new((result + 10) as u8), Some(true))
+  } else {
+    (u4::new(result as u8), Some(false))
+  }
+}
+
+
+// HEX add
+fn add_hex(num1: u4, num2: u4, carry: Option<bool>) -> (u4, Option<bool>) {
+  let mut result = num1.value() + num2.value();
+  if let Some(true) = carry {
+    result += 1;
+  }
+  if result >= 16 {
+    (u4::new(result - 16), Some(true))
+  } else {
+    (u4::new(result), Some(false))
+  }
+}
+
+//HEX subtract
+fn sub_hex(num1: u4, num2: u4, borrow: Option<bool>) -> (u4, Option<bool>) {
+  let mut result = num1.value() as isize - num2.value() as isize;
+  if let Some(true) = borrow {
+    result -= 1;
+  }
+  if result < 0 {
+    (u4::new((result + 16) as u8), Some(true))
+  } else {
+    (u4::new(result as u8), Some(false))
+  }
+}

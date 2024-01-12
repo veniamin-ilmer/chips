@@ -12,9 +12,11 @@
 //! Useful links
 //! * <https://archived.hpcalc.org/laporte/HP%2035%20Saga.htm>
 //! * <https://patentimages.storage.googleapis.com/44/5c/ab/197897f4ecaacb/US4001569.pdf>
-use arbitrary_int::{u4, u6, u10, u14};
+use arbitrary_int::{u4, u6, u10};
 use log::{trace, info};
 use crate::Indexer16;
+use crate::shifter;
+type WordSelect = shifter::Shifter16<14>;
 
 /// HP 1820-0849 Control and Timing (C&T) chip
 #[derive(Default)]
@@ -69,7 +71,7 @@ impl HP_CnT {
   }
 
   /// Returns word_select_data
-  pub fn run_cycle(&mut self, opcode: u10, mut carry: bool) -> u14 {
+  pub fn run_cycle(&mut self, opcode: u10, mut carry: bool) -> WordSelect {
     trace!("{:010b}", opcode);
     if self.timer > 0 {
       self.timer -= 1;
@@ -89,13 +91,13 @@ impl HP_CnT {
       0b11 => {
         trace!("JMP {:04o} (Carry = {})", byte_opcode, carry);
         if carry { self.next_address = byte_opcode; } 
-        u14::new(0)
+        WordSelect::new(0)
       },
       0b01 => {
         trace!("CALL {:04o}", byte_opcode);
         self.saved_address = self.next_address;
         self.next_address = byte_opcode;
-        u14::new(0)
+        WordSelect::new(0)
       },
       
       //Type 2, handled by A&R.
@@ -107,7 +109,7 @@ impl HP_CnT {
         } else {
           0
         };
-        u14::new(word_select_data)
+        WordSelect::new(word_select_data)
       },
       _ => {
         let value = byte_opcode >> 4;
@@ -149,7 +151,7 @@ impl HP_CnT {
             self.decrement_pointer();
             // Per documentation: When used with the pointer in position 14, the instruction has no effect.
             if word_select_data <= 0b11111111111111 {
-              return u14::new(word_select_data);
+              return WordSelect::new(word_select_data);
             }
           },
           
@@ -182,7 +184,7 @@ impl HP_CnT {
           },
           _ => unimplemented!("Unknown opcode: {:#b}00", byte_opcode),
         }
-        u14::new(0)
+        WordSelect::new(0)
       },
     }
   }

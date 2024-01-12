@@ -3,8 +3,10 @@
 //! 2. The WS signal for all codes without a pointer.
 //! The C&R would tell it which position to read.
 
-use arbitrary_int::{u3, u10, u14};
+use arbitrary_int::{u3, u10};
 use log::trace;
+use crate::shifter;
+type WordSelect = shifter::Shifter16<14>;
 
 /// HP ROM chip
 #[allow(non_camel_case_types)]
@@ -34,7 +36,7 @@ impl HP_ROM {
   /// Read and decode an opcode.
   /// Returns the opcode and the Word Select.
   #[inline]
-  pub fn read(&mut self, addr: u8) -> (u10, u14) {
+  pub fn read(&mut self, addr: u8) -> (u10, WordSelect) {
     let result = if self.output_enable {
       let opcode = self.unpack_data(addr);
       let word_select = match opcode.value() & 0b11111 { //0bxxx10 = Type 2. Generate the word select
@@ -47,9 +49,9 @@ impl HP_ROM {
         0b11110 => 0b10000000000000,  //Mantissa Sign
         _ => 0, //Pointer or up to pointer, handled by C & T
       };
-      (opcode, u14::new(word_select))
+      (opcode, WordSelect::new(word_select))
     } else {  //output disabled.
-      (u10::new(0), u14::new(0))
+      (u10::new(0), WordSelect::new(0))
     };
     
     //Read the delayed output enable, only after reading above.

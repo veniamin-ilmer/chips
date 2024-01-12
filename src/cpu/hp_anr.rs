@@ -18,12 +18,13 @@ use crate::shifter;
 /// Each of A&R's shift registers consisted of 14 nibbles (56 bits).
 pub type Register = shifter::Shifter64<56>;
 
+type WordSelect = shifter::Shifter16<14>;
+
 use arbitrary_int::{
   u4,   //Register nibbles
   u5,   //Type 2 Operation code
   u6,   //Type 5 Instruction
   u10,  //Opcode
-  u14,  //WordSelect
 };
 
 const ZERO: u4 = u4::new(0);
@@ -50,27 +51,6 @@ pub struct HP_AnR {
   pub next_carry: bool,
   /// Read by display
   pub display_on: bool,
-}
-
-struct WordSelect {
-  data: u14,
-}
-
-impl WordSelect {
-  fn shift(&mut self, direction: shifter::Direction) -> bool {
-    match direction {
-      shifter::Direction::Left => {
-        let carry = self.data & u14::new(0b10000000000000) == u14::new(0b10000000000000); //Check 14th bit
-        self.data <<= 1;
-        carry
-      },
-      shifter::Direction::Right => {
-        let carry = self.data & u14::new(1) == u14::new(1);
-        self.data >>= 1;
-        carry
-      }
-    }
-  }
 }
 
 
@@ -124,12 +104,12 @@ impl HP_AnR {
   }
 
   /// Handles Type 2 and Type 5 opcodes
-  pub fn run_cycle(&mut self, opcode: u10, word_select_data: u14, ram_data: Register) {
+  pub fn run_cycle(&mut self, opcode: u10, word_select: WordSelect, ram_data: Register) {
     self.next_carry = true; //Default, until proven otherwise.
     match opcode.value() & 0b11 {
-      0b10 => self.type_2(u5::new((opcode.value() >> 5) as u8), WordSelect { data: word_select_data }),
+      0b10 => self.type_2(u5::new((opcode.value() >> 5) as u8), word_select),
       0b00 => if opcode.value() & 0b1111 == 0b1000 {
-        self.type_5(u6::new((opcode.value() >> 4) as u8), WordSelect { data: word_select_data }, ram_data);
+        self.type_5(u6::new((opcode.value() >> 4) as u8), word_select, ram_data);
       },
       _ => {},  //C&T stuff
     }
@@ -138,7 +118,7 @@ impl HP_AnR {
   /// Type 2 - Arithmetic and Register. Returns carry
   /// See page 42, sections 19 and 20 of patent.
   fn type_2(&mut self, operation_code: u5, mut word_select: WordSelect) {
-    trace!("Word Select: {:014b}", word_select.data.value());
+    trace!("Word Select: {:014b}", word_select.read_parallel());
     //First do the calculations
     let mut carry = false;
     let mut first_digit = true;
@@ -152,7 +132,7 @@ impl HP_AnR {
       let mut a = self.a.read_nibble(direction);
       let mut b = self.b.read_nibble(direction);
       let mut c = self.c.read_nibble(direction);
-      if word_select.shift(direction) {
+      if word_select.read_and_shift_bit(direction, false) {
         //This is meant for math calculations, where we only need the first digit to be one.
         let one = if first_digit {
           first_digit = false;
@@ -221,7 +201,7 @@ impl HP_AnR {
       0b01 => { trace!("LOAD CONSTANT");
         for i in 0..14 {
           let mut c = self.c.read_nibble(shifter::Direction::Right);
-          if word_select.shift(shifter::Direction::Right) {
+          if word_select.read_and_shift_bit(shifter::Direction::Right, false) {
             c = u4::new(instruction.value() >> 2);
             trace!("C[{}] = {}", i, c);
           }
