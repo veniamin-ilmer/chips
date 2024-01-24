@@ -1,6 +1,4 @@
-//! All ROM chips
-
-mod f3851; pub use f3851::F3851;
+//! Simple ROM chips
 
 /// Intel 8702 is a 256 byte ROM.
 pub type I8702 = ROM<0x100>;

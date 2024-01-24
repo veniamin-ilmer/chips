@@ -30,6 +30,7 @@ pub mod cpu;
 pub mod hp_classic;
 pub mod mcs4;
 pub mod tms0800;
+pub mod fairchild_f8;
 //pub mod memory_pointer; pub use memory_pointer::MemoryPointer;
 pub mod indexer; pub use indexer::{Indexer16, Indexer64};
 

@@ -81,7 +81,7 @@ struct Flags {
 }
 
 /// Fairchild F3850 chip
-pub struct F3850 {
+pub struct CPU {
   /// Status Register (Flags)
   flags: Flags,
   /// Accumulator
@@ -96,9 +96,9 @@ pub struct F3850 {
   pub ports: [u8; 4],
 }
 
-impl Default for F3850 {
+impl Default for CPU {
   fn default() -> Self {
-    F3850 {
+    Self {
       flags: Default::default(),
       acc: 0,
       isar: 0,
@@ -110,7 +110,7 @@ impl Default for F3850 {
 }
 
 
-impl F3850 {
+impl CPU {
   /// Create a new chip
   pub fn new() -> Self {
     Default::default()

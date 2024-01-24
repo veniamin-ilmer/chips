@@ -1,7 +1,5 @@
 //! All RAM Chips
 
-mod f3852; pub use f3852::F3852;
-
 /// Intel 2107B is a 512 byte RAM.
 pub type I2107B = RAM<0x200>;
 
