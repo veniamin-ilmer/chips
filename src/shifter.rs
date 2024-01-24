@@ -2,9 +2,6 @@
 
 use arbitrary_int::{ u4 };
 
-/// Intel 4003 is a shift register with 10 bits, capable of both serial and parallel read/write
-pub type I4003 = PulsedShifter16<10>;
-
 /// 7400 Series 8 bit shift register
 //pub type S74X166 = Shifter<u8, 8>;
 
@@ -48,6 +45,7 @@ pub enum Direction {
 impl<const NUM_BITS: u32> Shifter64<NUM_BITS> {
   const MASK: u64 = (u64::MAX >> (u64::BITS - NUM_BITS));
 
+  /// Create a new shifter
   #[inline]
   pub fn new(data: u64) -> Self {
     Self {
@@ -118,7 +116,7 @@ impl<const NUM_BITS: u32> Shifter64<NUM_BITS> {
 
 }
 
-
+/// 16 bit shifter chip
 #[derive(Default, Clone, Copy, PartialEq)]
 pub struct Shifter16<const NUM_BITS: u32> {
   /// The shifter's "memory"
@@ -129,6 +127,7 @@ pub struct Shifter16<const NUM_BITS: u32> {
 impl<const NUM_BITS: u32> Shifter16<NUM_BITS> {
   const MASK: u16 = (u16::MAX >> (u16::BITS - NUM_BITS));
 
+  /// Create a new shifter chip
   #[inline]
   pub fn new(data: u16) -> Self {
     Self {
@@ -142,105 +141,11 @@ impl<const NUM_BITS: u32> Shifter16<NUM_BITS> {
     self.data
   }
 
+  /// Shift in new bit, get out the previous bit
   pub fn read_and_shift_bit(&mut self, direction: Direction, in_bit: bool) -> bool {
     let out_bit = self.read_bit(direction);
     self.shift_with_bit(direction, in_bit);
     out_bit
-  }
-
-  /// If left direction, writes right most bit
-  /// If right direction, writes left most bit
-  #[inline]
-  pub fn shift_with_bit(&mut self, direction: Direction, bit: bool) {
-    let shifted = match direction {
-      Direction::Left => (self.data << 1) & Self::MASK,
-      Direction::Right => self.data >> 1,
-    };
-    self.data = if bit {
-      shifted | match direction {
-        Direction::Left => 1,
-        Direction::Right => 1 << (NUM_BITS - 1),
-      }
-    } else {
-      shifted
-    };
-  }
-
-  /// If left direction, writes right most nibble
-  /// If right direction, writes left most nibble
-  #[inline]
-  pub fn shift_with_nibble(&mut self, direction: Direction, nibble: u4) {
-    let shifted = match direction {
-      Direction::Left => (self.data << 4) & Self::MASK,
-      Direction::Right => self.data >> 4,
-    };
-    self.data = shifted | match direction {
-      Direction::Left => nibble.value() as u16,
-      Direction::Right => (nibble.value() as u16) << (NUM_BITS - 4),
-    };
-  }
-
-  
-  /// If left direction, reads left most bit
-  /// If right direction, reads right most bit
-  #[inline]
-  pub fn read_bit(self, direction: Direction) -> bool {
-    let bit = match direction {
-      Direction::Left => self.data >> (NUM_BITS - 1),
-      Direction::Right => self.data,
-    };
-    bit & 1 == 1
-  }
-  
-  /// If left direction, reads left most nibble
-  /// If right direction, reads right most nibble
-  #[inline]
-  pub fn read_nibble(self, direction: Direction) -> u4 {
-    let nibble = match direction {
-      Direction::Left => self.data >> (NUM_BITS - 4),
-      Direction::Right => self.data,
-    } as u8;
-    u4::new(nibble & 0xF)
-  }
-
-}
-
-
-
-#[derive(Default, Clone, Copy, PartialEq)]
-pub struct PulsedShifter16<const NUM_BITS: u32> {
-  /// The shifter's "memory"
-  data: u16,
-  /// We only shift data after pulse switches from high to low, so we must keep track of the pulse
-  pulse: bool,
-}
-
-
-impl<const NUM_BITS: u32> PulsedShifter16<NUM_BITS> {
-  const MASK: u16 = (u16::MAX >> (u16::BITS - NUM_BITS));
-
-  #[inline]
-  pub fn new() -> Self {
-    Default::default()
-  }
-
-  /// Write and Read to the shifter at the same time.
-  ///
-  /// Write will only happen if `pulse` switches from high to low. Otherwise `in_bit` will be ignored.
-  #[inline]
-  pub fn read_write_serial(&mut self, direction: Direction, in_bit: bool, pulse: bool) -> bool {
-    let out_bit = self.read_bit(direction);
-    if self.pulse && !pulse {  //Updates happen when switching from a high pulse to low pulse.
-      self.shift_with_bit(direction, in_bit);
-    }
-    self.pulse = pulse;
-    out_bit
-  }
-
-  /// Read all bits at once
-  #[inline]
-  pub fn read_parallel(&self) -> u16 {
-    self.data
   }
 
   /// If left direction, writes right most bit

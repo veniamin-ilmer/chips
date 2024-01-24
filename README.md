@@ -23,19 +23,11 @@ It does not emulate any clock, syncing, or bus messaging. Chips which needs to r
 
 This way, you have the flexibility to handle all synchronization, clock, and bus messaging, independently from the chip functionality.
 
-All chips were built to communicate with via calling IO trait functions. In order to have two chips communicate with each other, they must do it via this IO trait.
+All chips were built to communicate either purely through function calls or via IO trait functions.
 
 ## Supported Chips
 
-* Intel 4001 ROM
-* Intel 4002 RAM
-* Intel 4003 Shift Register
-* Intel 4004 CPU
-* Fairchild 3850 CPU
-* Fairchild 3851 PSU (ROM)
-* Fairchild 3852 DMI (RAM)
-* HP Arithmetic & Register CPU
-* HP Control & Timing CPU
-* HP ROM
-* HP RAM
+* Intel MCS-4 (4001 ROM, 4002 RAM, 4003 Shifter, 4004 CPU)
+* Fairchild F8 {3850 CPU, 3851 PSU, 3852 DMI)
+* HP Classic (Control & Timing, Arithmetic & Register)
 * TMS-0800

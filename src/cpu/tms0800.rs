@@ -23,6 +23,7 @@ pub struct TMS0800 {
   carry: bool,
   /// Set by keyboard
   pub current_keypress: u16,
+  count: usize,
 }
 
 impl TMS0800 {
@@ -37,6 +38,7 @@ impl TMS0800 {
       d: shifter::Shifter16::<10>::new(0b1000000000),
       carry: false,
       current_keypress: 0,
+      count:0,
     }
   }
   
@@ -50,6 +52,12 @@ impl TMS0800 {
     let class = opcode.value() >> 9;
     let addr = opcode.value() & 0b111111111;
     let mut word_select = WordSelect::new(self.word_selects[mask.value() as usize].value());
+    if self.count > 0 {
+      self.count -= 1;
+      if self.count == 0 {
+        panic!("done");
+      }
+    }
     match class {
       0 => {
         trace!("Jump if not carry to {:03X}", addr);
@@ -75,6 +83,8 @@ impl TMS0800 {
             match instruction.value() {
               0..=15 => {
                 trace!("Jump on key match to {:03X}", addr);
+                //self.count = 100;
+
                 if self.d.read_parallel() == self.current_keypress {
                   self.pc = u9::new(addr);
                 }

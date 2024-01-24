@@ -10,7 +10,7 @@ use arbitrary_int::u4;
 #[derive(Default, Clone, Copy, PartialEq)]
 pub struct Indexer64 {
     /// The indexer's "memory"
-    data: u64,
+    pub data: u64,
 }
 
 impl Indexer64 {
@@ -54,7 +54,7 @@ impl Indexer64 {
   }
 }
 
-
+/// 16 bit indexer chip
 #[derive(Default, Debug, Clone, Copy, PartialEq)]
 pub struct Indexer16 {
     /// The indexer's "memory"

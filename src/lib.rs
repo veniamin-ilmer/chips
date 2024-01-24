@@ -16,6 +16,8 @@
 #![forbid(unsafe_code)]
 #![warn(missing_docs)]
 
+extern crate alloc;
+
 pub mod and; pub use and::AND;
 pub mod or; pub use or::OR;
 pub mod nand; pub use nand::NAND;
@@ -25,6 +27,8 @@ pub mod shifter; pub use shifter::{Shifter64};
 pub mod rom; pub use rom::ROM;
 pub mod ram; pub use ram::RAM;
 pub mod cpu;
+pub mod hp_classic;
+pub mod mcs4;
 //pub mod memory_pointer; pub use memory_pointer::MemoryPointer;
 pub mod indexer; pub use indexer::{Indexer16, Indexer64};
 
