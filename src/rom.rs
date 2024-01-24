@@ -1,8 +1,6 @@
 //! All ROM chips
 
-mod i4001; pub use i4001::I4001;
 mod f3851; pub use f3851::F3851;
-mod hp_rom; pub use hp_rom::HP_ROM;
 
 /// Intel 8702 is a 256 byte ROM.
 pub type I8702 = ROM<0x100>;

@@ -1,7 +1,5 @@
 //! Handling all of the arthimetic of the TMS0800 series
 
-use arbitrary_int::u11;
-
 use log::{debug, trace};
 use arbitrary_int::{u4,u5};
 use crate::shifter;
@@ -77,8 +75,8 @@ impl ALU {
   }
   
   /// Returns carry
-  pub fn run_cycle(&mut self, mut word_select: WordSelect, instruction: u5, mask: u4) -> Option<bool> {
-    let mut carry = None;
+  pub fn run_cycle(&mut self, mut word_select: WordSelect, instruction: u5, mask: u4) -> bool {
+    let mut carry = false;
     let direction = if matches!(instruction.value(), 0x17..=0x19) {
       shifter::Direction::Left
     } else {
@@ -86,7 +84,7 @@ impl ALU {
     };
     let mut prev_nibble = u4::new(0);
     let mut first_time = true;
-    for i in 0..11 {
+    for _ in 0..11 {
       let mut a = self.a.read_nibble(direction);
       let mut b = self.b.read_nibble(direction);
       let mut c = self.c.read_nibble(direction);
@@ -179,29 +177,29 @@ fn decode_instructions(alu_map: [u32; 13]) -> [Instruction; 32] {
 
 
 /// BCD/hex add
-fn add(num1: u4, num2: u4, carry: Option<bool>, hex: bool) -> (u4, Option<bool>) {
+fn add(num1: u4, num2: u4, carry: bool, hex: bool) -> (u4, bool) {
   let mut result = num1.value() + num2.value();
-  if let Some(true) = carry {
+  if carry {
     result += 1;
   }
   let ten = if hex { 16 } else { 10 };
   if result >= ten {
-    (u4::new(result - ten), Some(true))
+    (u4::new(result - ten), true)
   } else {
-    (u4::new(result), Some(false))
+    (u4::new(result), false)
   }
 }
 
 /// BCD/hex subtract
-fn sub(num1: u4, num2: u4, borrow: Option<bool>, hex: bool) -> (u4, Option<bool>) {
+fn sub(num1: u4, num2: u4, borrow: bool, hex: bool) -> (u4, bool) {
   let mut result = num1.value() as isize - num2.value() as isize;
-  if let Some(true) = borrow {
+  if borrow {
     result -= 1;
   }
   let ten = if hex { 16 } else { 10 };
   if result < 0 {
-    (u4::new((result + ten) as u8), Some(true))
+    (u4::new((result + ten) as u8), true)
   } else {
-    (u4::new(result as u8), Some(false))
+    (u4::new(result as u8), false)
   }
 }
