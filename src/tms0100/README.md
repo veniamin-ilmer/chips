@@ -8,6 +8,17 @@ This is a bit difficult, because it is possible all of these opcodes are actuall
 
 But I am trying to at least recreate the variant in the patent, and then go from there.
 
+## Keyboard
+
+Type | D11 | D10 | D9 | D8 | D7 | D6 | D5 | D4 | D3 | D2 | D1
+-----|-----|-----|----|----|----|----|----|----|----|----|----
+ KN  |     |  0  |  9 |  8 |  7 |  6 |  5 |  4 |  3 |  2 | 1
+ KO  |  C  |  Cl |  . | =  | +/-| -= | += | -  |  ÷ |  x | +
+ KP  |     |  0  |    |    |  7 |  6 |  5 |  4 |  3 |  2 | 1
+ KQ  |     |  K  |    |    |    |    |    |    |    |    |
+
+## Opcodes
+
 * A = Register A
 * B = Register B
 * C = Register C
@@ -44,6 +55,8 @@ Code   | Shift
 101010 | SRLB
 101111 | SRLC
 
+100X0110010
+
 It seems shifts only happen when M = MONT
 
 Code        | Meaning
@@ -67,12 +80,56 @@ XXXXX1011XX | C >> 4 or C - K
 XXXXX1100XX | A - B
 XXXXX1101XX | C - B
 
+Code        | Symbol | Purpose
+------------|--------|--------
+N           | I      | Jump = 0, Instruction = 1
+ NNNN       | Ma, Mb, Mc, Md | Masks
+     N      | S      | Subtract
+      NNN   | R      | Arguments
+         NN | Σ      | Where to return
+
+Instructions are encoded as:
+
+J/I | Md | Mc | Mb | Ma | Sub | Rc | Rb | Ra | Σb | Σa
+----|----|----|----|----|-----|----|----|----|----|----
+Jump=0<br/>Instruction = 1 | Mask | Mask | Mask | Mask | Add = 0<br />Subtract = 1 | Arg | Arg | Arg | Where return | Where return
+
+### Operation decoder (From Fig 17W)
+
+J/I | Ma | Mb | Mc | Md | Ra | Rb | Rc | Σa | Σb | Sub | Operation   | Result
+----|----|----|----|----|----|----|----|----|----|-----|-------------|-----------
+ 1  | 0  | X  | 0  | 0  | 1  | 0  | 0  | 1  |  0 | 1   | Shift Right | A = A >> 4
+ 1  | 0  | X  | 0  | 0  | 0  | 1  | 0  | 0  |  1 | 1   | Shift Right | B = B >> 4
+ 1  | 0  | X  | 0  | 0  | 1  | 1  | 0  | 1  |  1 | 1   | Shift Right | C = C >> 4
+
+ 
+### Σ Decoder (from Fig 17O, reading from left to right)
+
+Where to Return | Σb | Σa 
+-------|----|----
+ X     | 0  | 0  
+ C     | 1  | 1  
+ A     | 0  | 1  
+ B     | 1  | 0  
+
+R Decoder (from Fig 17U, reading from left to right):
+
+ Rc | Rb | Ra | EX | BV | AU | CU | WAIT | Discovered Function
+----|----|----|----|----|----|----|------|--------------------
+ 0  | 0  | 1  |    |    | ✓  |    |      | A is first argument
+ 0  | 1  | 0  |    | ✓  |    |    |      | B is second argument
+ 0  | 1  | 1  |    |    |    | ✓  |      | C is first arument
+ 1  | 0  | 0  |    | ✓  | ✓  |    |      | A is first arg, B is second arg
+ 1  | 0  | 1  |    | ✓  |    | ✓  |      | C is first arg, B is second arg
+ 1  | 1  | 1  |    |    |    |    |  ✓   | SPWD
+ 1  | 0  | 1  | ✓  |    |    |    |      | Exchange A and B
+
 Word         | ASM  | Explanation
 -------------|------|--------------------------
 00AAA AAAAAA | BO A | Jump to Addr
 01AAA AAAAAA | BZ A | Jump to Addr
 10000 000000 | WD11 | ???
-10010 000000 | KQCD | ???
+10010 000000 | KQCD | Something about the keyboard being KQ?
 10111 000001 | DPTA | ???
 1MMMM 000001 | CLA M | A = K
 1MMMM 000010 | MSDB | B = K
