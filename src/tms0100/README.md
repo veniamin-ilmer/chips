@@ -27,6 +27,13 @@ MMMM | ASM
 0110 | EXP1
 0111 | DPT1
 1000 | DPT7
+1001 | EXP7
+1010 | Compare flags
+1011 | Exchange flags
+1100 | Set flags
+1101 | Reset flags
+1110 | Toggle flags
+1111 | Test flags
 
 Code   | Shift
 -------|------
@@ -40,11 +47,11 @@ Code   | Shift
 It seems shifts only happen when M = MONT
 
 Code        | Meaning
-XXXXXXXXX00 | Compare. No equals.
+XXXXXXXXX00 | Compare. Not equal to anything
 XXXXXXXXX01 | A =
 XXXXXXXXX10 | B =
 XXXXXXXXX11 | C =
-XXXXX0000XX | Set to 0
+XXXXX0000XX | K
 XXXXX0001XX | A << 4 or A + K
 XXXXX0010XX | B << 4 or B + K
 XXXXX0011XX | C << 4 or C + K
@@ -52,31 +59,29 @@ XXXXX0100XX | A + B
 XXXXX0101XX | C + B
 XXXXX0110XX | Exchange A, B
 XXXXX0111XX | SPWD
-XXXXX1000XX | SCAN / SOCN / WD11 / KQCD / DPTA
+XXXXX1000XX | SCAN / SOCN / WD11 / KQCD / DPTA - Some kind of "wait" is here
 XXXXX1001XX | A >> 4 or A - K
 XXXXX1010XX | B >> 4 or B - K
 XXXXX1011XX | C >> 4 or C - K
 XXXXX1100XX | A - B
 XXXXX1101XX | C - B
 
-
-
-
-Word         | ASM | Explanation
--------------|-----|--------------------------
+Word         | ASM  | Explanation
+-------------|------|--------------------------
+00AAA AAAAAA | BO A | Jump to Addr
+01AAA AAAAAA | BZ A | Jump to Addr
 10000 000000 | WD11 | ???
 10010 000000 | KQCD | ???
 10111 000001 | DPTA | ???
-1MMMM 000001 | CLA ALL | A = 0
-10101 000010 | MSDB | ???
-1MMMM 000011 | CLC ALL | C = 0
-10010 000101 | SLLA MONT (line 039) | A = A << 4 
-10010 000101 | SLLA MONT (line 0EE) | A = A << 4 
+1MMMM 000001 | CLA M | A = K
+1MMMM 000010 | MSDB | B = K
+1MMMM 000011 | CLC M | C = K
+10010 000101 | SLLA MONT | A = A << 4 
 1MMMM 000101 | AAKA M | A = A + K
 1MMMM 000110 | AAKB M | B = A + K
 1MMMM 000111 | AAKC M | C = A + K
 1MMMM 001010 | SLLB M | B = B << 4
-1MMMM 001011 | ABKC M (line 0A9) | C = B + K
+1MMMM 001011 | ABKC M | C = B + K
 1MMMM 001011 | ABKA M | A = B + K
 1MMMM 001101 | ACKA M | A = C + K
 1MMMM 001110 | ACKB M | B = C + K
