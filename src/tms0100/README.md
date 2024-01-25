@@ -80,19 +80,12 @@ XXXXX1011XX | C >> 4 or C - K
 XXXXX1100XX | A - B
 XXXXX1101XX | C - B
 
-Code        | Symbol | Purpose
-------------|--------|--------
-N           | I      | Jump = 0, Instruction = 1
- NNNN       | Ma, Mb, Mc, Md | Masks
-     N      | S      | Subtract
-      NNN   | R      | Arguments
-         NN | Σ      | Where to return
 
 Instructions are encoded as:
 
 J/I | Md | Mc | Mb | Ma | Sub | Rc | Rb | Ra | Σb | Σa
 ----|----|----|----|----|-----|----|----|----|----|----
-Jump=0<br/>Instruction = 1 | Mask | Mask | Mask | Mask | Add = 0<br />Subtract = 1 | Arg | Arg | Arg | Where return | Where return
+Jump=0<br/>Instruction = 1 | Mask | Mask | Mask | Mask | Add = 0<br />Subtract = 1 | Arg | Arg | Arg | Where<br/>return | Where<br/>return
 
 ### Operation decoder (From Fig 17W)
 
@@ -112,7 +105,7 @@ Where to Return | Σb | Σa
  A     | 0  | 1  
  B     | 1  | 0  
 
-R Decoder (from Fig 17U, reading from left to right):
+### R Decoder (from Fig 17U, reading from left to right):
 
  Rc | Rb | Ra | EX | BV | AU | CU | WAIT | Discovered Function
 ----|----|----|----|----|----|----|------|--------------------
