@@ -47,6 +47,7 @@ Code   | Shift
 It seems shifts only happen when M = MONT
 
 Code        | Meaning
+------------|--------
 XXXXXXXXX00 | Compare. Not equal to anything
 XXXXXXXXX01 | A =
 XXXXXXXXX10 | B =
