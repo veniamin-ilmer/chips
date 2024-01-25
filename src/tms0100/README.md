@@ -16,42 +16,105 @@ But I am trying to at least recreate the variant in the patent, and then go from
 * FA = Flag A
 * FB = Flag B
 
+MMMM | ASM
+-----|----
+0000 | ALL
+0001 | EXP
+0010 | MONT / M19
+0011 | LSD1
+0100 | M11
+0101 | MSD1 / M81
+0110 | EXP1
+0111 | DPT1
+1000 | DPT7
 
-Word        | ASM | Explanation
-------------|-----|--------------------------
-10000000001 | CLA ALL | A = 0
-10000000011 | CLC ALL | C = 0
-10000000111 | AAKC ALL | C = A + K
-10000011000 | EXAB ALL | Exchange A and B
-10000011100 | SPWD | Wait unit the D is reset
-10001010011 | AABC EXP | C = A + B
-10010010001 | AABA MONT | A = A + B
-10110000101 | AAKA EXP1 | A = A + K
-10111000101 | AAKA DPT1 | A = A + K
-10000001101 | ACKA ALL | A = C + K
-10000001011 | ABKA ALL | A = B + K
-10001110000 | CAB EXP | A - B? Set cond if borrow
-10010110000 | CAB MONT | A - B? Set cond if borrow
-10010110000 | CAB M19 | A - B? Set cond if borrow
-10100100100 | CAK M11 | A - K? Set cond if borrow
-11000100100 | CAK DPT7 | A - K? Set cond if borrow
-10101100100 | CAK M81 | A - K? Set cond if borrow
-10110100100 | CAK EXP1 | A - K? Set cond if borrow
-10110101111 | SCKC EXP1 | C = C - K
-10001110011 | SABC EXP | C = A - B
-10010110001 | SABA MONT | A = A - B
-10110100101 | SAKA EXP1 | A = A - K
-10010100101 | SRLA MONT | A = A >> 4
-10010101010 | SRLB MONT | B = B >> 4
-10010000101 | SLLA MONT | A = A << 4
-10010001010 | SLLB MONT | B = B << 4
-1101000XXXX | CFA X | FA{i} != FB{i}? - set borrow if true
-1101100XXXX | XFA X | Exchange FA and FB
-1110000XXXX | SFA X | FA bits = True
-1110010XXXX | SFB X | FB bits = True
-1110100XXXX | ZFA X | FA bits = False
-1110110XXXX | ZFB X | FB bits = False
-1111000XXXX | FFA X | FA = !FA
-1111010XXXX | FFB X | FB = !FB
-1111100XXXX | TFA X | Test if FA bits are True
-1111110XXXX | TFB X | Test if FB bits are True
+Code   | Shift
+-------|------
+000101 | SLLA
+001010 | SLLB
+001111 | SLLC
+100101 | SRLA
+101010 | SRLB
+101111 | SRLC
+
+It seems shifts only happen when M = MONT
+
+Code        | Meaning
+XXXXXXXXX00 | Compare. No equals.
+XXXXXXXXX01 | A =
+XXXXXXXXX10 | B =
+XXXXXXXXX11 | C =
+XXXXX0000XX | Set to 0
+XXXXX0001XX | A << 4 or A + K
+XXXXX0010XX | B << 4 or B + K
+XXXXX0011XX | C << 4 or C + K
+XXXXX0100XX | A + B
+XXXXX0101XX | C + B
+XXXXX0110XX | Exchange A, B
+XXXXX0111XX | SPWD
+XXXXX1000XX | SCAN / SOCN / WD11 / KQCD / DPTA
+XXXXX1001XX | A >> 4 or A - K
+XXXXX1010XX | B >> 4 or B - K
+XXXXX1011XX | C >> 4 or C - K
+XXXXX1100XX | A - B
+XXXXX1101XX | C - B
+
+
+
+
+Word         | ASM | Explanation
+-------------|-----|--------------------------
+10000 000000 | WD11 | ???
+10010 000000 | KQCD | ???
+10111 000001 | DPTA | ???
+1MMMM 000001 | CLA ALL | A = 0
+10101 000010 | MSDB | ???
+1MMMM 000011 | CLC ALL | C = 0
+10010 000101 | SLLA MONT (line 039) | A = A << 4 
+10010 000101 | SLLA MONT (line 0EE) | A = A << 4 
+1MMMM 000101 | AAKA M | A = A + K
+1MMMM 000110 | AAKB M | B = A + K
+1MMMM 000111 | AAKC M | C = A + K
+1MMMM 001010 | SLLB M | B = B << 4
+1MMMM 001011 | ABKC M (line 0A9) | C = B + K
+1MMMM 001011 | ABKA M | A = B + K
+1MMMM 001101 | ACKA M | A = C + K
+1MMMM 001110 | ACKB M | B = C + K
+1MMMM 001111 | ACKC M | C = C + K
+1MMMM 001111 | SLLC M | C = C << 4
+1MMMM 010001 | AABA M | A = A + B
+1MMMM 010010 | AABB M | B = A + B
+1MMMM 010011 | AABC M | C = A + B
+1MMMM 011000 | EXAB M | Exchange A and B
+10000 011100 | SPWD | Wait until the D is reset
+10001 100000 | SCAN | Wait until the D is reset
+10011 100001 | SOCN | ???
+1MMMM 100100 | CAK M | A - K? Set cond if borrow
+10010 100101 | SRLA MONT | A = A >> 4
+1MMMM 100101 | SAKA M | A = A - K
+1MMMM 100110 | SAKB M | B = A - K
+1MMMM 100111 | SAKC M | C = A - K
+10010 101010 | SRLB MONT | B = B >> 4
+1MMMM 101100 | CCK M | C - K? Set cond if borrow
+1MMMM 101101 | SCKA M | A = C - K
+1MMMM 101110 | SCKB M | B = C - K
+1MMMM 101111 | SCKC M | C = C - K
+10010 101111 | SRLC MONT | C = C >> 4
+1MMMM 110000 | CAB M | A - B? Set cond if borrow
+1MMMM 110001 | SABA M | A = A - B
+1MMMM 110010 | SABB M | B = A - B
+1MMMM 110011 | SABC M | C = A - B
+1MMMM 110100 | CCB M | C - B? Set cond if borrow
+1MMMM 110101 | SCBA M | A = C - B
+1MMMM 110110 | SCBB M | B = C - B
+1MMMM 110111 | SCBC M | C = C - B
+11010 00XXXX | CFA X | FA{i} != FB{i}? - set borrow if true
+11011 00XXXX | XFA X | Exchange FA and FB
+11100 00XXXX | SFA X | FA bits = True
+11100 10XXXX | SFB X | FB bits = True
+11101 00XXXX | ZFA X | FA bits = False
+11101 10XXXX | ZFB X | FB bits = False
+11110 00XXXX | FFA X | FA = !FA
+11110 10XXXX | FFB X | FB = !FB
+11111 00XXXX | TFA X | Test if FA bits are True
+11111 10XXXX | TFB X | Test if FB bits are True
