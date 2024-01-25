@@ -17,15 +17,7 @@ Type | D11 | D10 | D9 | D8 | D7 | D6 | D5 | D4 | D3 | D2 | D1
  KP  |     |  0  |    |    |  7 |  6 |  5 |  4 |  3 |  2 | 1
  KQ  |     |  K  |    |    |    |    |    |    |    |    |
 
-## Opcodes
-
-* A = Register A
-* B = Register B
-* C = Register C
-* D = Internal shifting bit register
-* K = Constant
-* FA = Flag A
-* FB = Flag B
+## Mask
 
 MMMM | ASM
 -----|----
@@ -94,7 +86,11 @@ J/I | Ma | Mb | Mc | Md | Ra | Rb | Rc | Σa | Σb | Sub | Operation   | Result
  1  | 0  | X  | 0  | 0  | 1  | 0  | 0  | 1  |  0 | 1   | Shift Right | A = A >> 4
  1  | 0  | X  | 0  | 0  | 0  | 1  | 0  | 0  |  1 | 1   | Shift Right | B = B >> 4
  1  | 0  | X  | 0  | 0  | 1  | 1  | 0  | 1  |  1 | 1   | Shift Right | C = C >> 4
-
+ 1  | 0  | 0  | 0  | 0  | 0  | 0  | 0  | 0  |  0 | 0   | ININ        | WD11
+ 1  | 1  | 1  | 0  | 0  | 0  | 0  | 0  | 1  |  0 | 0   | ININ & I    | ???
+ 1  | 1  | 1  | 0  | 0  | 0  | 0  | 0  | 1  |  0 | 1   | ININ & II   | SOCN
+ 1  | 0  | 0  | 0  | 0  | 0  | 0  | 0  | 0  |  0 | 1   | ININ & KPCD | ???
+ 1  | 1  | 0  | 0  | 0  | 0  | 0  | 0  | 0  |  0 | 1   | ININ & KNCD & KOCD | SCAN
  
 ### Σ Decoder (from Fig 17O, reading from left to right)
 
@@ -116,6 +112,17 @@ Where to Return | Σb | Σa
  1  | 0  | 1  |    | ✓  |    | ✓  |      | C is first arg, B is second arg
  1  | 1  | 1  |    |    |    |    |  ✓   | SPWD
  1  | 0  | 1  | ✓  |    |    |    |      | Exchange A and B
+
+## Instruction Set
+
+* A = Register A
+* B = Register B
+* C = Register C
+* D = Internal shifting bit register
+* K = Constant
+* FA = Flag A
+* FB = Flag B
+
 
 Word         | ASM  | Explanation
 -------------|------|--------------------------
