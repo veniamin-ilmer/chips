@@ -91,6 +91,10 @@ J/I | Ma | Mb | Mc | Md | Ra | Rb | Rc | Σa | Σb | Sub | Operation   | Result
  1  | 1  | 1  | 0  | 0  | 0  | 0  | 0  | 1  |  0 | 1   | ININ & II   | SOCN
  1  | 0  | 0  | 0  | 0  | 0  | 0  | 0  | 0  |  0 | 1   | ININ & KPCD | ???
  1  | 1  | 0  | 0  | 0  | 0  | 0  | 0  | 0  |  0 | 1   | ININ & KNCD & KOCD | SCAN
+ 1  | 0  | 1  | 0  | 0  | 0  | 0  | 0  | 0  |  0 | 0   | ININ & KQCD | KQCD
+ 1  | 0  | X  | 0  | 0  | 1  | 0  | 0  | 1  |  0 | 0   | Shift Left | A = A << 4
+ 1  | 0  | X  | 0  | 0  | 0  | 1  | 0  | 0  |  1 | 0   | Shift Left | B = B << 4
+ 1  | 0  | X  | 0  | 0  | 1  | 1  | 0  | 1  |  1 | 0   | Shift Left | C = C << 4
  
 ### Σ Decoder (from Fig 17O, reading from left to right)
 
