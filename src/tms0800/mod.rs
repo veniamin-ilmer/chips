@@ -19,10 +19,10 @@ pub struct TMS0800 {
 }
 
 impl TMS0800 {
-  pub fn new(rom: [u11; 320], pla: [u32; 13], word_selects: [u11; 16], constants: [u4; 16]) -> Self {
+  pub fn new(rom: [u11; 320], opcodes: [alu::Opcode; 32], word_selects: [u11; 16], constants: [u4; 16]) -> Self {
     Self {
       rom,
-      alu: alu::ALU::new(pla, constants),
+      alu: alu::ALU::new(opcodes, constants),
       control: control::ControlUnit::new(),
       word_selects: word_selects,
       carry: false,

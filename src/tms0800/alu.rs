@@ -11,41 +11,60 @@ pub type Register = shifter::Shifter64<44>;
 type WordSelect = shifter::Shifter16<11>;
 
 #[derive(Debug, Clone, Copy)]
-enum Operation {
-  Add,
+pub enum Oper {
+  Plus,
   Shr,
   Shl,
-  Subtract,
+  Minus,
   ExchangeAB,
-  WaitForKey,
+  Wait,
 }
 
 #[derive(Debug, Clone, Copy)]
-enum Arg {
+pub enum Arg1 {
   A,
-  B,
   C,
+  None
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum Arg2 {
+  B,
   K,
   None
 }
 
+#[derive(Debug, Clone, Copy)]
+pub enum Dest {
+  A,
+  B,
+  C,
+  None
+}
+
 #[derive(Clone, Copy)]
-struct Instruction {
-  operation: Operation,
-  arg1: Arg,
-  arg2: Arg,
-  dest: Arg,
-  hex: bool,
+pub struct Opcode{ operation: Oper, dest: Dest, arg1: Arg1, arg2: Arg2, hex: bool }
+
+impl Opcode {
+  pub const fn new(dest: Dest, arg1: Arg1, operation: Oper, arg2: Arg2, hex: bool) -> Self {
+    Opcode {
+      operation,
+      arg1,
+      arg2,
+      dest,
+      hex
+    }
+  }
 }
 
 use core::fmt;
 
-impl fmt::Debug for Instruction {
+impl fmt::Debug for Opcode {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     if self.hex {
-      write!(f, "{:?} = {:?} {:?}, {:?} (hex)", self.dest, self.operation, self.arg1, self.arg2)
+      write!(f, "{:?} = {:?} {:?} {:?} (hex)", self.dest, self.arg1, self.operation, self.arg2)
     } else {
-      write!(f, "{:?} = {:?} {:?}, {:?}", self.dest, self.operation, self.arg1, self.arg2)
+      write!(f, "{:?} = {:?} {:?} {:?}", self.dest, self.arg1, self.operation, self.arg2)
     }
   }
 }
@@ -58,18 +77,18 @@ pub struct ALU {
   pub b: Register,
   /// General purpose register
   pub c: Register,
-  instructions: [Instruction; 32],
+  opcodes: [Opcode; 32],
   constants: [u4; 16],
 }
 
 impl ALU {
-  pub fn new(alu_map: [u32; 13], constants: [u4; 16]) -> Self {
+  pub fn new(opcodes: [Opcode; 32], constants: [u4; 16]) -> Self {
 
     Self {
       a: Register::new(0),
       b: Register::new(0),
       c: Register::new(0),
-      instructions: decode_instructions(alu_map),
+      opcodes,
       constants,
     }
   }
@@ -94,44 +113,40 @@ impl ALU {
         } else {
           u4::new(0)
         };
-        let instruction = self.instructions[instruction.value() as usize];
-        trace!("{:?}", instruction);
-        match instruction.operation {
-          Operation::Add | Operation::WaitForKey | Operation::Subtract => {
-            let arg1 = match instruction.arg1 {
-              Arg::A => a,
-              Arg::B => b,
-              Arg::C => c,
-              Arg::K => k,
-              Arg::None => u4::new(0),
+        let opcode = self.opcodes[instruction.value() as usize];
+        trace!("{:?}", opcode);
+        match opcode.operation {
+          Oper::Plus | Oper::Wait | Oper::Minus => {
+            let arg1 = match opcode.arg1 {
+              Arg1::A => a,
+              Arg1::C => c,
+              Arg1::None => u4::new(0),
             };
-            let arg2 = match instruction.arg2 {
-              Arg::A => a,
-              Arg::B => b,
-              Arg::C => c,
-              Arg::K => k,
-              Arg::None => u4::new(0),
+            let arg2 = match opcode.arg2 {
+              Arg2::B => b,
+              Arg2::K => k,
+              Arg2::None => u4::new(0),
             };
-            let result = if matches!(instruction.operation, Operation::Subtract) {
-              sub(arg1, arg2, carry, instruction.hex)
+            let (result, new_carry) = if matches!(opcode.operation, Oper::Minus) {
+              sub(arg1, arg2, carry, opcode.hex)
             } else {
-              add(arg1, arg2, carry, instruction.hex)
+              add(arg1, arg2, carry, opcode.hex)
             };
-            carry = result.1;
-            match instruction.dest {
-              Arg::A => a = result.0,
-              Arg::B => b = result.0,
-              Arg::C => c = result.0,
-              Arg::K | Arg::None => {},
+            carry = new_carry;
+            match opcode.dest {
+              Dest::A => a = result,
+              Dest::B => b = result,
+              Dest::C => c = result,
+              Dest::None => {},
             }
           },
-          Operation::ExchangeAB => (a, b) = (b, a),
-          Operation::Shl | Operation::Shr => {
-            match instruction.dest {
-              Arg::A => (a, prev_nibble) = (prev_nibble, a),
-              Arg::B => (b, prev_nibble) = (prev_nibble, b),
-              Arg::C => (c, prev_nibble) = (prev_nibble, c),
-              Arg::K | Arg::None => {},
+          Oper::ExchangeAB => (a, b) = (b, a),
+          Oper::Shl | Oper::Shr => {
+            match opcode.dest {
+              Dest::A => (a, prev_nibble) = (prev_nibble, a),
+              Dest::B => (b, prev_nibble) = (prev_nibble, b),
+              Dest::C => (c, prev_nibble) = (prev_nibble, c),
+              Dest::None => {},
             }
           },
         };
@@ -146,35 +161,6 @@ impl ALU {
   }
 
 }
-
-/// Decodes the programmable arithmetic control
-fn decode_instructions(alu_map: [u32; 13]) -> [Instruction; 32] {
-  let mut instructions = [Instruction {
-    operation: Operation::Add,
-    arg1: Arg::None,
-    arg2: Arg::None,
-    dest: Arg::None,
-    hex: false,
-  }; 32];
-
-  for i in 0..32 {
-    if (alu_map[0x0] >> i) & 1 == 1 { instructions[i].operation = Operation::Shr; }
-    if (alu_map[0x1] >> i) & 1 == 1 { instructions[i].operation = Operation::Shl; }
-    if (alu_map[0x2] >> i) & 1 == 1 { instructions[i].operation = Operation::Subtract; }
-    if (alu_map[0x3] >> i) & 1 == 1 { instructions[i].hex = true; }
-    if (alu_map[0x4] >> i) & 1 == 1 { instructions[i].arg1 = Arg::C; }
-    if (alu_map[0x5] >> i) & 1 == 1 { instructions[i].arg1 = Arg::A; }
-    if (alu_map[0x6] >> i) & 1 == 1 { instructions[i].arg2 = Arg::B; }
-    if (alu_map[0x7] >> i) & 1 == 1 { instructions[i].arg2 = Arg::K; }
-    if (alu_map[0x8] >> i) & 1 == 1 { instructions[i].dest = Arg::A; }
-    if (alu_map[0x9] >> i) & 1 == 1 { instructions[i].dest = Arg::C; }
-    if (alu_map[0xA] >> i) & 1 == 1 { instructions[i].dest = Arg::B; }
-    if (alu_map[0xB] >> i) & 1 == 1 { instructions[i].operation = Operation::ExchangeAB; }
-    if (alu_map[0xC] >> i) & 1 == 1 { instructions[i].operation = Operation::WaitForKey; }
-  }
-  instructions
-}
-
 
 /// BCD/hex add
 fn add(num1: u4, num2: u4, carry: bool, hex: bool) -> (u4, bool) {
